@@ -17,11 +17,11 @@ using namespace std;
 using namespace Eigen;
 
 
-static std::string outputNS = "/preprocessor";
+static std::string nodeNS = "/preprocessor";
 static std::string nodeName = "/preprocessor_node";
 
 struct LocalConfig : Config {
-  static std::string outputNS;
+  static std::string nodeNS;
   static std::string inputTopic;
   static std::string nodeName;
   static float zClipLow;
@@ -29,6 +29,8 @@ struct LocalConfig : Config {
   static bool updateParams;
   static float downsample;
   static bool removeOutliers;
+  static float clusterTolerance;
+  static float clusterMinSize;
 
   LocalConfig() : Config() {
     params.push_back(new Parameter<string>("inputTopic", &inputTopic, "input topic"));
@@ -37,6 +39,8 @@ struct LocalConfig : Config {
     params.push_back(new Parameter<bool>("updateParams", &updateParams, "start a thread to periodically update the parameters thru the parameter server"));
     params.push_back(new Parameter<float>("downsample", &downsample, "downsample voxel grid size. 0 means no"));
     params.push_back(new Parameter<bool>("removeOutliers", &removeOutliers, "remove outliers"));
+    params.push_back(new Parameter<float>("clusterTolerance", &clusterTolerance, "points within this distance are in the same cluster"));
+    params.push_back(new Parameter<float>("clusterMinSize", &clusterMinSize, "the clusters found must have at least this number of points. 0 means no filtering"));
   }
 };
 
@@ -46,6 +50,8 @@ float LocalConfig::zClipHigh = 1000;
 bool LocalConfig::updateParams = true;
 float LocalConfig::downsample = .02;
 bool LocalConfig::removeOutliers = false;
+float LocalConfig::clusterTolerance = 0.03;
+float LocalConfig::clusterMinSize = 40;
 
 static int MIN_HUE, MAX_HUE, MIN_SAT, MAX_SAT, MIN_VAL, MAX_VAL;
 
@@ -54,7 +60,7 @@ void getOrSetParam(const ros::NodeHandle& nh, std::string paramName, T& ref, T d
 	if (!nh.getParam(paramName, ref)) {
 		nh.setParam(paramName, defaultVal);
 		ref = defaultVal;
-		ROS_INFO_STREAM("setting " << paramName << "to default value " << defaultVal);
+		ROS_INFO_STREAM("setting " << paramName << " to default value " << defaultVal);
 	}
 }
 void setParams(const ros::NodeHandle& nh) {
@@ -66,8 +72,7 @@ void setParams(const ros::NodeHandle& nh) {
 	getOrSetParam(nh, "max_val", MAX_VAL, 255);
 }
 
-void setParamLoop() {
-	ros::NodeHandle nh(nodeName);
+void setParamLoop(ros::NodeHandle& nh) {
 	while (nh.ok()) {
 		setParams(nh);
 		sleep(1);
@@ -102,7 +107,8 @@ public:
     ColorCloudPtr cloud_out = orientedBoxFilter(cloud_in, m_axes, m_mins, m_maxes);
     cloud_out = hueFilter(cloud_out, MIN_HUE, MAX_HUE, MIN_SAT, MAX_SAT, MIN_VAL, MAX_VAL);
     if (LocalConfig::downsample > 0) cloud_out = downsampleCloud(cloud_out, LocalConfig::downsample);
-    if (LocalConfig::removeOutliers) cloud_out = removeOutliers(cloud_out, 1.5, 10);
+    if (LocalConfig::removeOutliers) cloud_out = removeOutliers(cloud_out, 1, 10);
+    if (LocalConfig::clusterMinSize > 0) cloud_out = clusterFilter(cloud_out, LocalConfig::clusterTolerance, LocalConfig::clusterMinSize);
 
     sensor_msgs::PointCloud2 msg_out;
     pcl::toROSMsg(*cloud_out, msg_out);
@@ -163,8 +169,8 @@ public:
   PreprocessorNode(ros::NodeHandle& nh) :
     m_inited(false),
     m_nh(nh),
-    m_pub(nh.advertise<sensor_msgs::PointCloud2>(outputNS+"/points",5)),
-    m_polyPub(nh.advertise<geometry_msgs::PolygonStamped>(outputNS+"/polygon",5)),
+    m_pub(nh.advertise<sensor_msgs::PointCloud2>("points",5)),
+    m_polyPub(nh.advertise<geometry_msgs::PolygonStamped>("polygon",5)),
     m_sub(nh.subscribe(LocalConfig::inputTopic, 1, &PreprocessorNode::callback, this))
     {
     }
@@ -179,10 +185,10 @@ int main(int argc, char* argv[]) {
 
 
   ros::init(argc, argv,"preprocessor");
-  ros::NodeHandle nh;
+  ros::NodeHandle nh(nodeNS);
 
   setParams(nh);
-  if (LocalConfig::updateParams) boost::thread setParamThread(setParamLoop);
+  if (LocalConfig::updateParams) boost::thread setParamThread(setParamLoop, nh);
 
 
   PreprocessorNode tp(nh);
