@@ -35,5 +35,8 @@ target_link_libraries(test_numerical_ik simulation robots)
 add_executable(test_rave_load test_rave_load.cpp)
 target_link_libraries(test_rave_load simulation robots)
 
+add_executable(test_rave_load2 test_rave_load2.cpp)
+target_link_libraries(test_rave_load2 simulation robots)
+
 add_executable(test_dynamic_pr2 test_dynamic_pr2.cpp)
 target_link_libraries(test_dynamic_pr2 simulation robots)
