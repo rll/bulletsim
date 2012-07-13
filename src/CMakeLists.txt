@@ -29,6 +29,7 @@ add_subdirectory(utils)
 #add_subdirectory(perception)
 add_subdirectory(comm)
 add_subdirectory(clouds)
+add_subdirectory(registration)
 
 add_subdirectory(tests)
 if (JOHNS_ADVENTURES)
