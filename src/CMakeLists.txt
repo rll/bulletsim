@@ -27,8 +27,10 @@ add_subdirectory(robots)
 add_subdirectory(utils)
 
 #add_subdirectory(perception)
+<<<<<<< HEAD
 #add_subdirectory(comm)
 #add_subdirectory(clouds)
+#add_subdirectory(registration)
 
 add_subdirectory(tests)
 if (JOHNS_ADVENTURES)
