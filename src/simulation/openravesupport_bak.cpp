@@ -58,7 +58,7 @@ btTransform centroidTransform(const std::list<KinBody::Link::GEOMPROPERTIES> &ge
 			case KinBody::Link::GEOMPROPERTIES::GeomTrimesh:
 				subshapeMass = 1;
 				meshOffset = computeCentroid(mesh);
-				//printf("subshapeCentroid(MESH) Translation: %f, %f, %f\n", meshOffset.getX(), meshOffset.getY(), meshOffset.getZ());
+				printf("subshapeCentroid(MESH) Translation: %f, %f, %f\n", meshOffset.getX(), meshOffset.getY(), meshOffset.getZ());
 				break;
 			default:
 				subshapeMass = 0;
@@ -73,11 +73,13 @@ btTransform centroidTransform(const std::list<KinBody::Link::GEOMPROPERTIES> &ge
 		relativeTransform =  relativeTransform * subshapeTransform;
 
 
-		//printf("translation of subshape: %f, %f, %f //mass of subshape: %f\n", relativeTransform.getOrigin().getX(), relativeTransform.getOrigin().getY(), relativeTransform.getOrigin().getZ(), subshapeMass);
-		//printf("geomGetTransform Rotation: %f, %f, %f, %f\n", geom->GetTransform().rot.w, geom->GetTransform().rot.x, geom->GetTransform().rot.y, geom->GetTransform().rot.z);
+		printf("translation of subshape: %f, %f, %f //mass of subshape: %f\n",
+				relativeTransform.getOrigin().getX(), relativeTransform.getOrigin().getY(), relativeTransform.getOrigin().getZ(), subshapeMass);
+		//printf("geomGetTransform Rotation: %f, %f, %f, %f\n",
+		//		geom->GetTransform().rot.w, geom->GetTransform().rot.x, geom->GetTransform().rot.y, geom->GetTransform().rot.z);
 
 	}
-	//printf("KinBody totalMass: %f\n", totalMass);
+	printf("KinBody totalMass: %f\n", totalMass);
 	relativeTransform.setOrigin(relativeTransform.getOrigin() / totalMass);
 	return relativeTransform;
 }
@@ -169,12 +171,12 @@ static BulletObject::Ptr createFromLink(KinBody::LinkPtr link,
 	btVector3 meshOffset;
 	btTransform relativeTransform;
 
-	trimeshMode = CONVEX_DECOMP;
+
 	//specified kinbody translation
 	btTransform linkGetTransform = util::toBtTransform(link->GetTransform(), GeneralConfig::scale);
 	btTransform childTransform =  initTransform * linkGetTransform;
 
-	//printf("===========initTransform Translation: %f, %f, %f===========\n", initTransform.getOrigin().getX(), initTransform.getOrigin().getY(), initTransform.getOrigin().getZ());
+	printf("===========initTransform Translation: %f, %f, %f===========\n", initTransform.getOrigin().getX(), initTransform.getOrigin().getY(), initTransform.getOrigin().getZ());
 	//printf("linkGetTransform: %f, %f, %f\n", initTransform.getOrigin().getX(), initTransform.getOrigin().getY(), initTransform.getOrigin().getZ());
 	//printf("linkGetRotation: %f, %f, %f, %f\n", initTransform.getRotation().getW(), initTransform.getRotation().getX(), initTransform.getRotation().getY(), initTransform.getRotation().getZ());
 
@@ -192,7 +194,7 @@ static BulletObject::Ptr createFromLink(KinBody::LinkPtr link,
 
 	relativeTransform = centroidTransform(geometries);
 
-	//printf("relativeCentroidTranslation: %f, %f, %f\n", relativeTransform.getOrigin().getX(), relativeTransform.getOrigin().getY(), relativeTransform.getOrigin().getZ());
+	printf("relativeCentroidTranslation: %f, %f, %f\n", relativeTransform.getOrigin().getX(), relativeTransform.getOrigin().getY(), relativeTransform.getOrigin().getZ());
 	//printf("relativeCentroidRotation: %f, %f, %f, %f\n", relativeTransform.getRotation().getW(), relativeTransform.getRotation().getX(), relativeTransform.getRotation().getY(), relativeTransform.getRotation().getZ());
 
 	//Put toghether the KinBody
@@ -228,16 +230,13 @@ static BulletObject::Ptr createFromLink(KinBody::LinkPtr link,
 			if (trimeshMode == CONVEX_DECOMP) {
 				printf("running convex decomposition\n");
 				ConvexDecomp decomp(fmargin);
-				//for (size_t i = 0; i < mesh.vertices.size(); ++i)
-					//decomp.addPoint(util::toBtVector(GeneralConfig::scale * mesh.vertices[i]));// - relativeTransform.getOrigin());
-				for (size_t i = 0; i < mesh.indices.size(); i += 3){
-					//decomp.addTriangle(mesh.indices[i], mesh.indices[i + 1], mesh.indices[i + 2]);
-					decomp.addTriangle(util::toBtVector(GeneralConfig::scale * mesh.vertices[i]) - relativeTransform.getOrigin(),
-							util::toBtVector(GeneralConfig::scale * mesh.vertices[i + 1]) - relativeTransform.getOrigin(),
-							util::toBtVector(GeneralConfig::scale * mesh.vertices[i + 2]) - relativeTransform.getOrigin());
-
-				}
+				for (size_t i = 0; i < mesh.vertices.size(); ++i)
+					decomp.addPoint(util::toBtVector(mesh.vertices[i]));
+				for (size_t i = 0; i < mesh.indices.size(); i += 3)
+					decomp.addTriangle(mesh.indices[i], mesh.indices[i + 1],
+							mesh.indices[i + 2]);
 				subshape = decomp.run(subshapes); // use subshapes to just store smart pointer
+
 			} else {
 
 				//offset = computeCentroid(mesh) * METERS * 0;
@@ -291,23 +290,22 @@ static BulletObject::Ptr createFromLink(KinBody::LinkPtr link,
 		subshape->setMargin(fmargin);
 
 		btTransform subshapeTransform = util::toBtTransform(geom->GetTransform(),GeneralConfig::scale);
-
-
 		subshapeTransform = subshapeTransform * relativeTransform.inverse();
 		subshapeTransform.setOrigin(subshapeTransform.getOrigin() + meshOffset);
-		//printf("subshape new translation: %f, %f, %f\n", subshapeTransform.getOrigin().getX(), subshapeTransform.getOrigin().getY(), subshapeTransform.getOrigin().getZ());
+		printf("subshape new translation: %f, %f, %f\n", subshapeTransform.getOrigin().getX(), subshapeTransform.getOrigin().getY(), subshapeTransform.getOrigin().getZ());
+
 
 		compound->addChildShape(subshapeTransform, subshape.get());
 	}
 
 	Transform link_t = link->GetTransform();
-	//printf("shape initial translation: %f, %f, %f\n", childTransform.getOrigin().getX(), childTransform.getOrigin().getY(), childTransform.getOrigin().getZ());
+	printf("shape initial translation: %f, %f, %f\n", childTransform.getOrigin().getX(), childTransform.getOrigin().getY(), childTransform.getOrigin().getZ());
 
 
 	childTransform = childTransform * relativeTransform;
 	float mass = isDynamic ? link->GetMass() : 0;
 
-	//printf("shape center of mass: %f, %f, %f\n", childTransform.getOrigin().getX(), childTransform.getOrigin().getY(), childTransform.getOrigin().getZ());
+	printf("shape center of mass: %f, %f, %f\n", childTransform.getOrigin().getX(), childTransform.getOrigin().getY(), childTransform.getOrigin().getZ());
 	BulletObject::Ptr child(new BulletObject(mass, compound, childTransform, !isDynamic));
 	return child;
 
@@ -376,7 +374,9 @@ BulletConstraint::Ptr createFromJoint(KinBody::JointPtr joint, std::map<
 	return BulletConstraint::Ptr(new BulletConstraint(cnt, true));
 }
 
-void RaveObject::initRaveObject(RaveInstance::Ptr rave_, KinBodyPtr body_,  const btTransform &initTrans_, TrimeshMode trimeshMode, float fmargin, bool isDynamic) {
+void RaveObject::initRaveObject(RaveInstance::Ptr rave_, KinBodyPtr body_,
+        const btTransform &initTrans_,
+		TrimeshMode trimeshMode, float fmargin, bool isDynamic) {
 	rave = rave_;
 	body = body_;
     initTrans = initTrans_;

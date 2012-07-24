@@ -16,81 +16,14 @@ btVector3 computeCentroid(const KinBody::Link::TRIMESH& mesh) {
 	BOOST_FOREACH(const RaveVector<double>& v, mesh.vertices) {
 		sum += util::toBtVector(v);
 	}
-	//printf("COMPUTECENTROIDOFTRIMESHFUNCTION: %f, %f, %f\n", (sum / mesh.vertices.size()).getX(), (sum / mesh.vertices.size()).getY(), (sum / mesh.vertices.size()).getZ());
-	return GeneralConfig::scale * sum / mesh.vertices.size();
-}
-
-btTransform centroidTransform(const std::list<KinBody::Link::GEOMPROPERTIES> &geometries){
-
-	btScalar totalMass = 0;
-	btTransform relativeTransform;
-	relativeTransform.setIdentity();
-
-	//calculate total mass of KinBody
-	for (std::list<KinBody::Link::GEOMPROPERTIES>::const_iterator geom = geometries.begin(); geom != geometries.end(); ++geom) {
-
-		btVector3 boxExtents;
-		btScalar sphereRadius;
-		btScalar cylinderRadius;
-		btScalar cylinderHeight;
-
-		btScalar subshapeMass;
-		btTransform subshapeTransform;
-
-		btVector3 meshOffset(0,0,0);
-
-		const KinBody::Link::TRIMESH &mesh = geom->GetCollisionMesh();
-
-		switch (geom->GetType()) {
-			case KinBody::Link::GEOMPROPERTIES::GeomBox:
-				boxExtents = util::toBtVector(geom->GetBoxExtents());
-				subshapeMass = 8.0 * boxExtents.getX()* boxExtents.getY() * boxExtents.getZ();
-				break;
-			case KinBody::Link::GEOMPROPERTIES::GeomSphere:
-				sphereRadius = geom->GetSphereRadius();
-				subshapeMass = 4.0/3.0 * 3.14159265358979323 * sphereRadius * sphereRadius * sphereRadius;
-				break;
-			case KinBody::Link::GEOMPROPERTIES::GeomCylinder:
-				cylinderRadius = geom->GetCylinderRadius();
-				cylinderHeight = geom->GetCylinderHeight();
-				subshapeMass = 3.14159265358979323 * cylinderRadius * cylinderRadius * cylinderHeight;
-				break;
-			case KinBody::Link::GEOMPROPERTIES::GeomTrimesh:
-				subshapeMass = 1;
-				meshOffset = computeCentroid(mesh);
-				//printf("subshapeCentroid(MESH) Translation: %f, %f, %f\n", meshOffset.getX(), meshOffset.getY(), meshOffset.getZ());
-				break;
-			default:
-				subshapeMass = 0;
-				break;
-		}
-		subshapeMass *= GeneralConfig::scale * GeneralConfig::scale * GeneralConfig::scale;
-		totalMass += subshapeMass;
-
-		subshapeTransform = util::toBtTransform(geom->GetTransform(),GeneralConfig::scale * subshapeMass);
-		subshapeTransform.setOrigin(subshapeTransform.getOrigin() + meshOffset * subshapeMass);
-
-		relativeTransform =  relativeTransform * subshapeTransform;
-
-
-		//printf("translation of subshape: %f, %f, %f //mass of subshape: %f\n", relativeTransform.getOrigin().getX(), relativeTransform.getOrigin().getY(), relativeTransform.getOrigin().getZ(), subshapeMass);
-		//printf("geomGetTransform Rotation: %f, %f, %f, %f\n", geom->GetTransform().rot.w, geom->GetTransform().rot.x, geom->GetTransform().rot.y, geom->GetTransform().rot.z);
-
-	}
-	//printf("KinBody totalMass: %f\n", totalMass);
-	relativeTransform.setOrigin(relativeTransform.getOrigin() / totalMass);
-	return relativeTransform;
-}
-
-btScalar computeVolume(const KinBody::Link::TRIMESH& mesh) {
-	return btScalar(1);
+	return sum / mesh.vertices.size();
 }
 
 RaveInstance::RaveInstance() {
 	isRoot = true;
 	RaveInitialize(true);
 	env = RaveCreateEnvironment();
-	if (GeneralConfig::verbose  <= log4cplus::DEBUG_LOG_LEVEL)
+	if (GeneralConfig::verbose <= log4cplus::DEBUG_LOG_LEVEL)
 		RaveSetDebugLevel(Level_Debug);
 }
 
@@ -100,7 +33,7 @@ RaveInstance::RaveInstance(const RaveInstance &o, int cloneOpts) {
 }
 
 RaveInstance::~RaveInstance() {
-    env->Destroy();
+	env->Destroy();
 	if (isRoot)
 		RaveDestroy();
 }
@@ -133,7 +66,7 @@ void Load(Environment::Ptr env, RaveInstance::Ptr rave, const string& filename,
 }
 
 RaveObject::RaveObject(RaveInstance::Ptr rave_, KinBodyPtr body_,
-        const btTransform &initTrans,
+		const btTransform &initTrans,
 		TrimeshMode trimeshMode, bool isDynamic) {
 	initRaveObject(rave_, body_, initTrans, trimeshMode, .0005 * METERS, isDynamic);
 }
@@ -143,9 +76,9 @@ void RaveObject::init() {
 
 	typedef std::map<KinBody::JointPtr, BulletConstraint::Ptr> map_t;
 	BOOST_FOREACH( map_t::value_type &joint_cnt, jointMap )
-{	cout << joint_cnt.first->GetName() << endl;
+	{ cout << joint_cnt.first->GetName() << endl;
 	getEnvironment()->addConstraint(joint_cnt.second);
-}
+	}
 }
 
 void RaveObject::destroy() {
@@ -154,31 +87,21 @@ void RaveObject::destroy() {
 	typedef std::map<KinBody::JointPtr, BulletConstraint::Ptr> map_t;
 	map_t mmap;
 	BOOST_FOREACH( map_t::value_type &joint_cnt, mmap )
-{	getEnvironment()->removeConstraint(joint_cnt.second);
-}
+	{ getEnvironment()->removeConstraint(joint_cnt.second);
+	}
 
 }
 
 static BulletObject::Ptr createFromLink(KinBody::LinkPtr link,
-        std::vector<boost::shared_ptr<btCollisionShape> >& subshapes,
-        std::vector<boost::shared_ptr<btStridingMeshInterface> >& meshes,
-        const btTransform &initTransform, TrimeshMode trimeshMode,
-        float fmargin, bool isDynamic) {
+		std::vector<boost::shared_ptr<btCollisionShape> >& subshapes,
+		std::vector<boost::shared_ptr<btStridingMeshInterface> >& meshes,
+		const btTransform &initTrans, TrimeshMode trimeshMode,
+		float fmargin, bool isDynamic) {
 
 	btVector3 offset(0, 0, 0);
-	btVector3 meshOffset;
-	btTransform relativeTransform;
 
-	trimeshMode = CONVEX_DECOMP;
-	//specified kinbody translation
-	btTransform linkGetTransform = util::toBtTransform(link->GetTransform(), GeneralConfig::scale);
-	btTransform childTransform =  initTransform * linkGetTransform;
-
-	//printf("===========initTransform Translation: %f, %f, %f===========\n", initTransform.getOrigin().getX(), initTransform.getOrigin().getY(), initTransform.getOrigin().getZ());
-	//printf("linkGetTransform: %f, %f, %f\n", initTransform.getOrigin().getX(), initTransform.getOrigin().getY(), initTransform.getOrigin().getZ());
-	//printf("linkGetRotation: %f, %f, %f, %f\n", initTransform.getRotation().getW(), initTransform.getRotation().getX(), initTransform.getRotation().getY(), initTransform.getRotation().getZ());
-
-	const std::list<KinBody::Link::GEOMPROPERTIES> &geometries = link->GetGeometries();
+	const std::list<KinBody::Link::GEOMPROPERTIES> &geometries =
+			link->GetGeometries();
 	// sometimes the OpenRAVE link might not even have any geometry data associated with it
 	// (this is the case with the PR2 model). therefore just add an empty BulletObject
 	// pointer so we know to skip it in the future
@@ -190,86 +113,80 @@ static BulletObject::Ptr createFromLink(KinBody::LinkPtr link,
 	btCompoundShape *compound = new btCompoundShape();
 	compound->setMargin(fmargin);
 
-	relativeTransform = centroidTransform(geometries);
-
-	//printf("relativeCentroidTranslation: %f, %f, %f\n", relativeTransform.getOrigin().getX(), relativeTransform.getOrigin().getY(), relativeTransform.getOrigin().getZ());
-	//printf("relativeCentroidRotation: %f, %f, %f, %f\n", relativeTransform.getRotation().getW(), relativeTransform.getRotation().getX(), relativeTransform.getRotation().getY(), relativeTransform.getRotation().getZ());
-
-	//Put toghether the KinBody
-	for (std::list<KinBody::Link::GEOMPROPERTIES>::const_iterator geom = geometries.begin(); geom != geometries.end(); ++geom) {
+	for (std::list<KinBody::Link::GEOMPROPERTIES>::const_iterator geom =
+			geometries.begin(); geom != geometries.end(); ++geom) {
 
 		boost::shared_ptr<btCollisionShape> subshape;
-
 		const KinBody::Link::TRIMESH &mesh = geom->GetCollisionMesh();
-		btBoxShape * boxShape;
 
 		switch (geom->GetType()) {
 		case KinBody::Link::GEOMPROPERTIES::GeomBox:
-			boxShape = new btBoxShape(util::toBtVector(GeneralConfig::scale* geom->GetBoxExtents()));
-			subshape.reset(boxShape);
-			meshOffset.setZero();
+			subshape.reset(new btBoxShape(util::toBtVector(GeneralConfig::scale
+					* geom->GetBoxExtents())));
 			break;
+
 		case KinBody::Link::GEOMPROPERTIES::GeomSphere:
-			subshape.reset(new btSphereShape(GeneralConfig::scale * geom->GetSphereRadius()));
-			meshOffset.setZero();
+			subshape.reset(new btSphereShape(GeneralConfig::scale
+					* geom->GetSphereRadius()));
 			break;
+
 		case KinBody::Link::GEOMPROPERTIES::GeomCylinder:
 			// cylinder axis aligned to Y
 			subshape.reset(new btCylinderShapeZ(btVector3(GeneralConfig::scale
 					* geom->GetCylinderRadius(), GeneralConfig::scale
 					* geom->GetCylinderRadius(), GeneralConfig::scale
 					* geom->GetCylinderHeight() / 2.)));
-			meshOffset.setZero();
 			break;
+
 		case KinBody::Link::GEOMPROPERTIES::GeomTrimesh:
-			meshOffset = computeCentroid(mesh);
 			if (mesh.indices.size() < 3)
 				break;
 			if (trimeshMode == CONVEX_DECOMP) {
 				printf("running convex decomposition\n");
 				ConvexDecomp decomp(fmargin);
-				//for (size_t i = 0; i < mesh.vertices.size(); ++i)
-					//decomp.addPoint(util::toBtVector(GeneralConfig::scale * mesh.vertices[i]));// - relativeTransform.getOrigin());
-				for (size_t i = 0; i < mesh.indices.size(); i += 3){
-					//decomp.addTriangle(mesh.indices[i], mesh.indices[i + 1], mesh.indices[i + 2]);
-					decomp.addTriangle(util::toBtVector(GeneralConfig::scale * mesh.vertices[i]) - relativeTransform.getOrigin(),
-							util::toBtVector(GeneralConfig::scale * mesh.vertices[i + 1]) - relativeTransform.getOrigin(),
-							util::toBtVector(GeneralConfig::scale * mesh.vertices[i + 2]) - relativeTransform.getOrigin());
-
-				}
+				for (size_t i = 0; i < mesh.vertices.size(); ++i)
+					decomp.addPoint(util::toBtVector(mesh.vertices[i]));
+				for (size_t i = 0; i < mesh.indices.size(); i += 3)
+					decomp.addTriangle(mesh.indices[i], mesh.indices[i + 1],
+							mesh.indices[i + 2]);
 				subshape = decomp.run(subshapes); // use subshapes to just store smart pointer
+
 			} else {
 
-				//offset = computeCentroid(mesh) * METERS * 0;
+				offset = computeCentroid(mesh) * METERS * 0;
 
 				btTriangleMesh* ptrimesh = new btTriangleMesh();
 				// for some reason adding indices makes everything crash
 				/*
-				 printf("-----------\n");
-				 for (int z = 0; z < mesh.indices.size(); ++z)
-				 printf("%d\n", mesh.indices[z]);
-				 printf("-----------\n");*/
+printf("-----------\n");
+for (int z = 0; z < mesh.indices.size(); ++z)
+printf("%d\n", mesh.indices[z]);
+printf("-----------\n");*/
 
-				for (size_t i = 0; i < mesh.indices.size(); i += 3){
-					ptrimesh->addTriangle(util::toBtVector(GeneralConfig::scale	* mesh.vertices[i]) - relativeTransform.getOrigin(),
-							util::toBtVector(GeneralConfig::scale * mesh.vertices[i + 1]) - relativeTransform.getOrigin(),
-							util::toBtVector(GeneralConfig::scale * mesh.vertices[i + 2])- relativeTransform.getOrigin());
-				}
+				for (size_t i = 0; i < mesh.indices.size(); i += 3)
+					ptrimesh->addTriangle(util::toBtVector(GeneralConfig::scale
+							* mesh.vertices[i]) - offset, util::toBtVector(
+									GeneralConfig::scale * mesh.vertices[i + 1])
+				- offset, util::toBtVector(GeneralConfig::scale
+						* mesh.vertices[i + 2]) - offset);
 				// store the trimesh somewhere so it doesn't get deallocated by the smart pointer
-				meshes.push_back(boost::shared_ptr<btStridingMeshInterface>(ptrimesh));
+				meshes.push_back(boost::shared_ptr<btStridingMeshInterface>(
+						ptrimesh));
 
 				if (trimeshMode == CONVEX_HULL) {
-					boost::shared_ptr<btConvexShape> pconvexbuilder(new btConvexTriangleMeshShape(ptrimesh));
+					boost::shared_ptr<btConvexShape> pconvexbuilder(
+							new btConvexTriangleMeshShape(ptrimesh));
 					pconvexbuilder->setMargin(fmargin);
 
 					//Create a hull shape to approximate Trimesh
-					boost::shared_ptr<btShapeHull> hull(new btShapeHull( pconvexbuilder.get()));
+					boost::shared_ptr<btShapeHull> hull(new btShapeHull(
+							pconvexbuilder.get()));
 					hull->buildHull(fmargin);
 
 					btConvexHullShape *convexShape = new btConvexHullShape();
-					for (int i = 0; i < hull->numVertices(); ++i){
-						convexShape->addPoint(hull->getVertexPointer()[i]);// + relativeTransform.getOrigin());
-					}
+					for (int i = 0; i < hull->numVertices(); ++i)
+						convexShape->addPoint(hull->getVertexPointer()[i]);
+
 					subshape.reset(convexShape);
 
 				} else { // RAW
@@ -281,34 +198,34 @@ static BulletObject::Ptr createFromLink(KinBody::LinkPtr link,
 		default:
 			break;
 		}
+
 		if (!subshape) {
 			cout << "did not create geom type %d\n", geom->GetType();
 			continue;
 		}
 
+		btVector3 subshapeCentroid = util::toBtTransform(geom->GetTransform(),GeneralConfig::scale).getOrigin();
+		printf("translation of subshape: %f, %f, %f\n",	subshapeCentroid.getX(),subshapeCentroid.getY(),subshapeCentroid.getZ());
+
+
 		// store the subshape somewhere so it doesn't get deallocated by the smart pointer
 		subshapes.push_back(subshape);
 		subshape->setMargin(fmargin);
-
-		btTransform subshapeTransform = util::toBtTransform(geom->GetTransform(),GeneralConfig::scale);
-
-
-		subshapeTransform = subshapeTransform * relativeTransform.inverse();
-		subshapeTransform.setOrigin(subshapeTransform.getOrigin() + meshOffset);
-		//printf("subshape new translation: %f, %f, %f\n", subshapeTransform.getOrigin().getX(), subshapeTransform.getOrigin().getY(), subshapeTransform.getOrigin().getZ());
-
-		compound->addChildShape(subshapeTransform, subshape.get());
+		btTransform transform = util::toBtTransform(geom->GetTransform(),
+				GeneralConfig::scale);
+		transform.setOrigin(transform.getOrigin() + offset);
+		compound->addChildShape(transform, subshape.get());
 	}
 
-	Transform link_t = link->GetTransform();
-	//printf("shape initial translation: %f, %f, %f\n", childTransform.getOrigin().getX(), childTransform.getOrigin().getY(), childTransform.getOrigin().getZ());
+	btTransform childTrans = initTrans * util::toBtTransform(link->GetTransform(),
+			GeneralConfig::scale);
+	printf("translation of kinbody: %f, %f, %f\n",	childTrans.getOrigin().getX(),childTrans.getOrigin().getY(),childTrans.getOrigin().getZ());
 
 
-	childTransform = childTransform * relativeTransform;
 	float mass = isDynamic ? link->GetMass() : 0;
+	BulletObject::Ptr child(new BulletObject(mass, compound, childTrans,
+			!isDynamic));
 
-	//printf("shape center of mass: %f, %f, %f\n", childTransform.getOrigin().getX(), childTransform.getOrigin().getY(), childTransform.getOrigin().getZ());
-	BulletObject::Ptr child(new BulletObject(mass, compound, childTransform, !isDynamic));
 	return child;
 
 }
@@ -366,20 +283,22 @@ BulletConstraint::Ptr createFromJoint(KinBody::JointPtr joint, std::map<
 	case KinBody::Joint::JointUniversal:
 		RAVELOG_ERROR ( "universal joint not supported by bullet\n");
 		break;
-		case KinBody::Joint::JointHinge2:
+	case KinBody::Joint::JointHinge2:
 		RAVELOG_ERROR("hinge2 joint not supported by bullet\n");
 		break;
-		default:
+	default:
 		cout << boost::format("unknown joint type %d\n")%joint->GetType();
 		break;
 	}
 	return BulletConstraint::Ptr(new BulletConstraint(cnt, true));
 }
 
-void RaveObject::initRaveObject(RaveInstance::Ptr rave_, KinBodyPtr body_,  const btTransform &initTrans_, TrimeshMode trimeshMode, float fmargin, bool isDynamic) {
+void RaveObject::initRaveObject(RaveInstance::Ptr rave_, KinBodyPtr body_,
+		const btTransform &initTrans_,
+		TrimeshMode trimeshMode, float fmargin, bool isDynamic) {
 	rave = rave_;
 	body = body_;
-    initTrans = initTrans_;
+	initTrans = initTrans_;
 
 	const std::vector<KinBody::LinkPtr> &links = body->GetLinks();
 	getChildren().reserve(links.size());
@@ -392,25 +311,25 @@ void RaveObject::initRaveObject(RaveInstance::Ptr rave_, KinBodyPtr body_,  cons
 		childPosMap[child] = getChildren().size() - 1;
 		if (child) {
 			collisionObjMap[child->rigidBody.get()] = link;
-		// since the joints are always in contact, we should ignore their collisions
-		// when setting joint positions (OpenRAVE should take care of them anyway)
+			// since the joints are always in contact, we should ignore their collisions
+			// when setting joint positions (OpenRAVE should take care of them anyway)
 			ignoreCollisionWith(child->rigidBody.get());
-	}
-}
-
-if (isDynamic) {
-	vector<KinBody::JointPtr> vbodyjoints; vbodyjoints.reserve(body->GetJoints().size()+body->GetPassiveJoints().size());
-	vbodyjoints.insert(vbodyjoints.end(),body->GetJoints().begin(),body->GetJoints().end());
-	vbodyjoints.insert(vbodyjoints.end(),body->GetPassiveJoints().begin(),body->GetPassiveJoints().end());
-	BOOST_FOREACH(KinBody::JointPtr joint, vbodyjoints) {
-		BulletConstraint::Ptr constraint = createFromJoint(joint, linkMap);
-		if (constraint) {
-			// todo: put this in init:
-			// getEnvironment()->bullet->dynamicsWorld->addConstraint(constraint->cnt, bIgnoreCollision);
-			jointMap[joint] = constraint;
 		}
 	}
-}
+
+	if (isDynamic) {
+		vector<KinBody::JointPtr> vbodyjoints; vbodyjoints.reserve(body->GetJoints().size()+body->GetPassiveJoints().size());
+		vbodyjoints.insert(vbodyjoints.end(),body->GetJoints().begin(),body->GetJoints().end());
+		vbodyjoints.insert(vbodyjoints.end(),body->GetPassiveJoints().begin(),body->GetPassiveJoints().end());
+		BOOST_FOREACH(KinBody::JointPtr joint, vbodyjoints) {
+			BulletConstraint::Ptr constraint = createFromJoint(joint, linkMap);
+			if (constraint) {
+				// todo: put this in init:
+				// getEnvironment()->bullet->dynamicsWorld->addConstraint(constraint->cnt, bIgnoreCollision);
+				jointMap[joint] = constraint;
+			}
+		}
+	}
 }
 
 bool RaveObject::detectCollisions() {
@@ -473,7 +392,7 @@ EnvironmentObject::Ptr RaveObject::copy(Fork &f) const {
 
 	internalCopy(o, f); // copies all children
 
-    o->initTrans = initTrans;
+	o->initTrans = initTrans;
 	o->rave.reset(new RaveInstance(*rave, OpenRAVE::Clone_Bodies));
 
 	// now we need to set up mappings in the copied robot
@@ -572,8 +491,8 @@ RaveRobotObject::Manipulator::Ptr RaveRobotObject::createManipulator(
 	// stringstream ssin, ssout;
 	// ssin << "LoadIKFastSolver " << robot->GetName() << " " << (int)IkParameterization::Type_Transform6D;
 	// if (!m->ikmodule->SendCommand(ssout, ssin)) {
-	//   cout << "failed to load iksolver\n";
-	//     return Manipulator::Ptr(); // null
+	// cout << "failed to load iksolver\n";
+	// return Manipulator::Ptr(); // null
 	// }
 
 	m->useFakeGrabber = useFakeGrabber;
@@ -617,7 +536,7 @@ bool RaveRobotObject::Manipulator::solveAllIKUnscaled(
 	// see comments for solveIKUnscaled
 	if (!origManip->FindIKSolutions(IkParameterization(targetTrans),
 			vsolutions, true)) {
-		std::cout << "ik  failed on " << manip->GetName() << endl;
+		std::cout << "ik failed on " << manip->GetName() << endl;
 		return false;
 	}
 	return true;

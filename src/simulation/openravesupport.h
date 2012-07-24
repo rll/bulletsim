@@ -67,7 +67,7 @@ public:
 
   KinBodyPtr body;
 
-  RaveObject(RaveInstance::Ptr rave_, KinBodyPtr body, const btTransform &initTrans_=btTransform::getIdentity(), TrimeshMode trimeshMode                 = CONVEX_HULL, bool isDynamic=true);
+  RaveObject(RaveInstance::Ptr rave_, KinBodyPtr body, const btTransform &initTrans_=btTransform::getIdentity(), TrimeshMode trimeshMode = CONVEX_HULL, bool isDynamic=true);
   // This constructor assumes the robot is already in openrave. Use this if you're loading a bunch of stuff from an
   // xml file, and you want to put everything in bullet
 

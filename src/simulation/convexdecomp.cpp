@@ -1,11 +1,11 @@
 #include "convexdecomp.h"
 
-/*void ConvexDecomp::addTriangle(const btVector3 &v0, const btVector3 &v1, const btVector3 &v2) {
+void ConvexDecomp::addTriangle(const btVector3 &v0, const btVector3 &v1, const btVector3 &v2) {
     points.push_back(toHACDVec(v0));
     points.push_back(toHACDVec(v1));
     points.push_back(toHACDVec(v2));
     triangles.push_back(HACD::Vec3<long>(points.size() - 3, points.size() - 2, points.size() - 1));
-}*/
+}
 
 boost::shared_ptr<btCompoundShape> ConvexDecomp::run(std::vector<boost::shared_ptr<btCollisionShape> > &shapeStorage) {
     HACD::HACD hacd;
@@ -20,18 +20,20 @@ boost::shared_ptr<btCompoundShape> ConvexDecomp::run(std::vector<boost::shared_p
     // Recommended parameters: 2 100 0 0 0 0
     //size_t nClusters = 2;
     size_t nClusters = 1;
-    double concavity = 100;
+    double concavity = 250; //100
     bool invert = false;
-    bool addExtraDistPoints = false;
+    bool addExtraDistPoints = true; //originally false
     bool addNeighboursDistPoints = false;
     bool addFacesPoints = false;       
 
+
     hacd.SetNClusters(nClusters);                     // minimum number of clusters
-    hacd.SetNVerticesPerCH(100);                      // max of 100 vertices per convex-hull
+    hacd.SetNVerticesPerCH(20);                      // max of 100 vertices per convex-hull
     hacd.SetConcavity(concavity);                     // maximum concavity
     hacd.SetAddExtraDistPoints(addExtraDistPoints);   
     hacd.SetAddNeighboursDistPoints(addNeighboursDistPoints);   
     hacd.SetAddFacesPoints(addFacesPoints); 
+
 
     hacd.Compute();
     nClusters = hacd.GetNClusters();	
@@ -58,15 +60,18 @@ btConvexHullShape *ConvexDecomp::processCluster(HACD::HACD &hacd, int c, btVecto
 
     // points
     ret_centroid.setZero();
+    /**
     for(size_t v = 0; v < nPoints; v++)
         ret_centroid += toBtVector(pointsCH[v]);
     ret_centroid *= 1./nPoints;
+	**/
 
     btAlignedObjectArray<btVector3> shiftedVertices;
     shiftedVertices.reserve(nPoints);
-    for(size_t v = 0; v < nPoints; v++)
-        shiftedVertices.push_back(toBtVector(pointsCH[v]) - ret_centroid);
-
+    for(size_t v = 0; v < nPoints; v++){
+//DEBUG CODE
+        shiftedVertices.push_back(toBtVector(pointsCH[v]));
+    }
     delete [] pointsCH;
     delete [] trianglesCH;
 
