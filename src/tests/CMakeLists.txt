@@ -1,3 +1,6 @@
+include_directories("/home/ankush/Sources/gperftools-2.0/src")
+link_directories("/home/ankush/Sources/gperftools-2.0/libs")
+
 add_executable(test_simplescene test_simplescene.cpp)
 target_link_libraries(test_simplescene simulation robots)
 
