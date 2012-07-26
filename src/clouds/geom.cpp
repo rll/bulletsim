@@ -44,7 +44,7 @@ void minEncRect(const vector<Vector3f>& pts3d, const Vector4f& abcd, vector<Vect
 
 	verts3d.clear();
 	for (int i = 0; i < 4; i++) {
-		verts3d.push_back(  (va * verts2d[i].x + vb * verts2d[i].y - normal * q)/MULTIPLIER   );
+		verts3d.push_back(  (va * verts2d[i].x + vb * verts2d[i].y)/MULTIPLIER - normal * q  );
 	}
 
 }
