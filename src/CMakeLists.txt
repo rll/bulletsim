@@ -27,8 +27,8 @@ add_subdirectory(robots)
 add_subdirectory(utils)
 add_subdirectory(comm)
 add_subdirectory(clouds)
-
 add_subdirectory(tests)
+
 if (JOHNS_ADVENTURES)
    add_subdirectory(john_sandbox)
    add_subdirectory(knots)

@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
   BulletRaycastVisibility visInterface(scene.env->bullet->dynamicsWorld, transformer);
   SimplePhysicsTracker alg(trackedObj, &visInterface, scene.env);
 
-  Load(scene.env, scene.rave, "/home/joschu/python/lfd/data/table.xml");
+  Load(scene.env, scene.rave, "/home/sibi/sandbox/bulletsim/src/tracking/objects/table.xml");
   
   scene.addVoidKeyCallback('c',boost::bind(toggle, &alg.m_enableCorrPlot));
   scene.addVoidKeyCallback('e',boost::bind(toggle, &alg.m_enableEstPlot));
