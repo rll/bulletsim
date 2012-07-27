@@ -1,7 +1,7 @@
 /**
    Author: Dmitry Berenson
    Maintained by: Ankush Gupta | 27th July 2012.
- **/
+**/
 
 #ifndef _GRIPPER_KINEMATIC_OBJECT_
 #define _GRIPPER_KINEMATIC_OBJECT_
@@ -26,11 +26,11 @@ enum GripperState {GripperState_DONE, GripperState_CLOSING,
     The cubiods are BoxObjects, which derives from bullet's Kinematic Object,
     making the gripper itself a kinematic object. */
 class GripperKinematicObject : public CompoundObject<BoxObject> {
-
+  
  public:
   // The distance b/w the jaws of the gripper, when open
   float apperture;
-
+  
   // The transform of the mid-pt joining top and the bottom jaws' origin
   btTransform cur_tm;
 
@@ -96,14 +96,14 @@ class GripperKinematicObject : public CompoundObject<BoxObject> {
       Has 2 modes to attach:
       ----------------------
       1. Radius search : All nodes of PSB within a radius RADIUS
-                         are attach to the gripper using an anchor.
-
+      are attach to the gripper using an anchor.
+      
       2. Collision Search : All nodes of PSB colliding with the
-                            gripper are attached using an anchor.
-                            The points of collision b/w the gripper
-                            and the PSB are calculated and the nodes
-                            in PSB closest to those points are anchored.
-
+      gripper are attached using an anchor.
+      The points of collision b/w the gripper
+      and the PSB are calculated and the nodes
+      in PSB closest to those points are anchored.
+      
       When it detaches, all anchors, except those pertaining to this gripper
       attached to the PSB remain unchanged.
       This gripper's anchors are removed from the list of anchors of PSB and
@@ -117,20 +117,20 @@ class GripperKinematicObject : public CompoundObject<BoxObject> {
 
 
   /** Adapted from btSoftBody.cpp (btSoftBody::appendAnchor).
-
-    Appends an anchor to the soft-body, connecting
-    node and the given rigidBody.
-
-    PSB  : The softbody to which the anchor is appended.
-    NODE : The specific node on which the anchor is attached.
-    BODY : The other end of anchor. The rigid body to which
-           the anchor is attached.
-    INFLUENCE : \in [0,1] : value of 1 means max attachment. */
+      
+      Appends an anchor to the soft-body, connecting
+      node and the given rigidBody.
+      
+      PSB : The softbody to which the anchor is appended.
+      NODE : The specific node on which the anchor is attached.
+      BODY : The other end of anchor. The rigid body to which
+      the anchor is attached.
+      INFLUENCE : \in [0,1] : value of 1 means max attachment. */
   void appendAnchor(btSoftBody *psb, btSoftBody::Node *node, btRigidBody *body,
 		    btScalar influence=1);
 
 
-  // Clears the list of the anchors attached to this gripper. 
+  // Clears the list of the anchors attached to this gripper.
   void releaseAllAnchors(btSoftBody * psb) {psb->m_anchors.clear();}
 
 
@@ -161,7 +161,7 @@ class GripperKinematicObject : public CompoundObject<BoxObject> {
     for (iter = children.begin(); iter != children.end(); iter++) {
       if (*iter)
 	gripper->children.push_back(boost::static_pointer_cast<BoxObject>
-			      ((*iter)->copy(f)));
+				    ((*iter)->copy(f)));
       else
 	gripper->children.push_back(BoxObject::Ptr());
     }
@@ -169,7 +169,7 @@ class GripperKinematicObject : public CompoundObject<BoxObject> {
 
 
   /* Opens/closes the gripper, while interacting with the given
-     softBody PSB. 
+     softBody PSB.
      Successive calls to this function update the gripper's jaws.
      Each call moves the jaws by a small bit. */
   void step_openclose(btSoftBody * psb) {
@@ -201,7 +201,7 @@ class GripperKinematicObject : public CompoundObject<BoxObject> {
     children[0]->motionState->setKinematicPos(top_tm);
     children[1]->motionState->setKinematicPos(bottom_tm);
 
-    double current_gap_length = 
+    double current_gap_length =
       (top_tm.getOrigin() - bottom_tm.getOrigin()).length();
 
     if(state == GripperState_CLOSING
@@ -212,7 +212,7 @@ class GripperKinematicObject : public CompoundObject<BoxObject> {
 	toggleattach(psb);
     }
 
-    if(state == GripperState_OPENING && cur_gap_length >= apperture) {
+    if(state == GripperState_OPENING && current_gap_length >= apperture) {
       state = GripperState_DONE;
       bOpen = true;
     }

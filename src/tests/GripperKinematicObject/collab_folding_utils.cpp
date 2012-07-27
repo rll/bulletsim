@@ -1,7 +1,7 @@
 /** Author: Dmitry Berenson
     Maintained by: Ankush Gupta | 27th July 2012. */
 
-#include "colab_folding_utils.h"
+#include "collab_folding_utils.h"
 
 /** Simply copies the coordinates of the nodes in M_NODES
     into NODEPOSEVEC. */

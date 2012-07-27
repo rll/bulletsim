@@ -5,7 +5,6 @@
 
 #include "GripperKinematicObject.h"
 
-
 /** Applies the transform TM to the mid-pt of the TOP-JAW and
     the BOTTOM-JAW.*/
 void GripperKinematicObject::applyTransform(btTransform tm) {
@@ -38,7 +37,7 @@ void GripperKinematicObject::translate(btVector3 transvec) {
    attached to the PSB remain unchanged.
    This gripper's anchors are removed from the list of anchors of PSB
    and the list of the nodes attached maintained by this gripper is cleared. */
-void GripperKinematicObject::toggleattach(btSoftBody * psb, double radius=0) {
+void GripperKinematicObject::toggleattach(btSoftBody * psb, double radius) {
 
     if(bAttached) {
       btAlignedObjectArray<btSoftBody::Anchor> newanchors;
