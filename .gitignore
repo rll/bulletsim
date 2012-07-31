@@ -4,3 +4,5 @@ build/*
 *.wpr
 *.wpu
 data/knotsbagfiles
+*/CMakeFiles/*
+MakeFile
