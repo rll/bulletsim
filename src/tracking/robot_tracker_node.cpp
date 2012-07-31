@@ -101,6 +101,7 @@ int main(int argc, char* argv[]) {
 //  SoftMonitorForGrabbing rMonitor(pr2m.pr2, pr2m.pr2Right, false);
 
   PR2SoftBodyGripper leftSoftGripper(pr2m.pr2, pr2m.pr2Left->manip, true);
+  cout<<"Initial address of the object: "<<&leftSoftGripper<<endl;
 
 
   TrackedTowel::Ptr maybeTowel = boost::dynamic_pointer_cast<TrackedTowel>(trackedObj);
@@ -112,8 +113,8 @@ int main(int argc, char* argv[]) {
 //	  rMonitor.setTarget(towelSim);
 	  leftSoftGripper.setTarget(towelSim);
 	  leftGrabDetector = new GrabDetector(GrabDetector::LEFT,
-			  boost::bind(&PR2SoftBodyGripper::grab, leftSoftGripper),
-			  boost::bind(&PR2SoftBodyGripper::releaseAllAnchors, leftSoftGripper));
+			  boost::bind(&PR2SoftBodyGripper::grab, &leftSoftGripper),
+			  boost::bind(&PR2SoftBodyGripper::releaseAllAnchors, &leftSoftGripper));
   }
 
 
