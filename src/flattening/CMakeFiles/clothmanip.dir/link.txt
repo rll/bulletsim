@@ -1,0 +1,2 @@
+/usr/bin/ar cr libclothmanip.a  CMakeFiles/clothmanip.dir/nodeactions.cpp.o CMakeFiles/clothmanip.dir/search.cpp.o CMakeFiles/clothmanip.dir/clothutil.cpp.o CMakeFiles/clothmanip.dir/make_bodies.cpp.o CMakeFiles/clothmanip.dir/clothgrasping.cpp.o
+/usr/bin/ranlib libclothmanip.a
