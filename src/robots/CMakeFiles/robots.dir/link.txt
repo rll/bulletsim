@@ -1,2 +1,0 @@
-/usr/bin/ar cr librobots.a  CMakeFiles/robots.dir/grabbing.cpp.o CMakeFiles/robots.dir/pr2.cpp.o CMakeFiles/robots.dir/ros2rave.cpp.o
-/usr/bin/ranlib librobots.a
