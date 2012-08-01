@@ -1,9 +1,11 @@
 /** Author: Dmitry Berenson
     Maintained by: Ankush Gupta. 30th July 2012. */
 
+
 #ifndef _CUSTOM_SCENE_
 #define _CUSTOM_SCENE_
 
+#include "config.h"
 #include "collab_folding_utils.h"
 #include "GripperKinematicObject.h"
 #include "step_state.h"
@@ -12,14 +14,18 @@
 #include "simulation/simplescene.h"
 #include <omp.h>
 
-class CustomScene : public Scene {
-
-public:
-
 #ifdef USE_PR2
-  PR2SoftBodyGripperAction::Ptr leftAction, rightAction;
-  PR2Manager pr2m;
+#include <openrave/kinbody.h>
+#include "robots/pr2.h"
 #endif
+
+class CustomScene : public Scene {
+public:  
+#ifdef USE_PR2
+    PR2SoftBodyGripperAction::Ptr leftAction, rightAction;
+    PR2Manager pr2m;
+#endif
+     
 
   GripperKinematicObject::Ptr left_gripper1, right_gripper1,
     left_gripper1_orig, right_gripper1_orig,
@@ -112,79 +118,65 @@ public:
 
 
   /** Constructor. */
-#ifdef USE_PR2
- CustomScene() : pr2m(*this);
-#else
-    CustomScene();
-#endif
+  CustomScene();
   
-
-    /* Creates a square cloth with side length 2s.
-       The four coordinates of the cloth are:
-             {(s,s) (-s,s,) (-s,-s) (s,-s)}
-       Then, the center of the cloth (initially at (0,0,0)
-       is translated to CENTER.*/
-    BulletSoftObject::Ptr createCloth(btScalar s, const btVector3 &center);
-
-
-    void createFork();
-    void destroyFork();
-
-    /** Swaps the forked objects with the ones in the main loop. */
-    void swapFork();
+  /* Creates a square cloth with side length 2s.
+     The four coordinates of the cloth are:
+     {(s,s) (-s,s,) (-s,-s) (s,-s)}
+     Then, the center of the cloth (initially at (0,0,0)
+     is translated to CENTER.*/
+  BulletSoftObject::Ptr createCloth(btScalar s, const btVector3 &center);
 
 
-    /** Simulates the cloth in bullet for JACOBIAN_SIM_TIME
-	and takes the difference in the positions of the node and
-	divides by JACOBIAN_SIM_TIME.*/
-    Eigen::MatrixXf computeJacobian();
+  void createFork();
+  void destroyFork();
 
-    
-    /** Very similar to computeJacobian except is parallelized
-	(using openMP).*/
-    Eigen::MatrixXf computeJacobian_parallel();
+  /** Swaps the forked objects with the ones in the main loop. */
+  void swapFork();
+
+
+  /** Simulates the cloth in bullet for JACOBIAN_SIM_TIME
+      and takes the difference in the positions of the node and
+      divides by JACOBIAN_SIM_TIME.*/
+  Eigen::MatrixXf computeJacobian();
 
     
-    /** Computes an approximation to the Jacobian of the cloth's
-	node positions wrt to the robot grippers, by using an 
-	scaling factor which decays exponentially with increasing
-	distance from the gripper. */
-    Eigen::MatrixXf computeJacobian_approx();
+  /** Very similar to computeJacobian except is parallelized
+      (using openMP).*/
+  Eigen::MatrixXf computeJacobian_parallel();
+
+    
+  /** Computes an approximation to the Jacobian of the cloth's
+      node positions wrt to the robot grippers, by using an 
+      scaling factor which decays exponentially with increasing
+      distance from the gripper. */
+  Eigen::MatrixXf computeJacobian_approx();
 
 
-    /** Finds the distance from a node corresponding to 
-	INPUT_IND on the cloth to the closest node attached to the gripper.*/
-    double getDistfromNodeToClosestAttachedNodeInGripper
-      (GripperKinematicObject::Ptr gripper, int input_ind, int &closest_ind);
+  /** Finds the distance from a node corresponding to 
+      INPUT_IND on the cloth to the closest node attached to the gripper.*/
+  double getDistfromNodeToClosestAttachedNodeInGripper
+    (GripperKinematicObject::Ptr gripper, int input_ind, int &closest_ind);
 
 
-    /** Simulates in a new fork.*/
-    void simulateInNewFork(StepState& innerstate, float sim_time,
-			   btTransform& left_gripper1_tm,
-			   btTransform& left_gripper2_tm);
+  /** Simulates in a new fork.*/
+  void simulateInNewFork(StepState& innerstate, float sim_time,
+			 btTransform& left_gripper1_tm,
+			 btTransform& left_gripper2_tm);
 
-    /** Main loop which is responsible for jacobian tracking. */
-    void doJTracking();
+  /** Main loop which is responsible for jacobian tracking. */
+  void doJTracking();
 
-    /** Draws the axes at LEFT_GRIPPER1 and LEFT_GRIPPER2. */
-    void drawAxes();
+  /** Draws the axes at LEFT_GRIPPER1 and LEFT_GRIPPER2. */
+  void drawAxes();
 
-    /** Attaches GRIPPER_TO_ATTACH with the softbody and detaches
-	GRIPPER_TO_DETACH from it.*/
-    void regraspWithOneGripper(GripperKinematicObject::Ptr gripper_to_attach,
-			       GripperKinematicObject::Ptr  gripper_to_detach);
+  /** Attaches GRIPPER_TO_ATTACH with the softbody and detaches
+      GRIPPER_TO_DETACH from it.*/
+  void regraspWithOneGripper(GripperKinematicObject::Ptr gripper_to_attach,
+			     GripperKinematicObject::Ptr  gripper_to_detach);
 
-    /* Sets up the scene and UI event handlers,
-       initializes various structures.*/
-    void run();
+  /* Sets up the scene and UI event handlers,
+     initializes various structures.*/
+  void run();
 };
-
-
-/**class CustomKeyHandler : public osgGA::GUIEventHandler {
-  CustomScene &scene;
- public:
- CustomKeyHandler(CustomScene &scene_) : scene(scene_) { }
-  bool handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter&);
-  };**/
-
 #endif

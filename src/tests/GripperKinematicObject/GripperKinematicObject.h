@@ -6,6 +6,7 @@
 #ifndef _GRIPPER_KINEMATIC_OBJECT_
 #define _GRIPPER_KINEMATIC_OBJECT_
 
+#include "config.h"
 #include "simulation/softbodies.h"
 #include "simulation/config_bullet.h"
 #include <BulletSoftBody/btSoftBodyHelpers.h>

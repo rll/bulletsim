@@ -15,8 +15,8 @@ option (PROFILER "Profile the code." OFF)
 option (USE_PR2 "Use R2 in simulation." ON)
 
 configure_file (
-  "${CMAKE_CURRENT_SOURCE_DIR}/test_collab_folding.cpp.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/test_collab_folding.cpp")
+  "${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/config.h")
 
 add_library(GripperKinematicObject GripperKinematicObject.cpp)
 target_link_libraries(GripperKinematicObject CollabUtils simulation robots)

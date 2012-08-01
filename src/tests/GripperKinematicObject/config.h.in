@@ -1,0 +1,5 @@
+#cmakedefine USE_PR2
+#cmakedefine DO_ROTATION
+#cmakedefine USE_RADIUS_CONTACT
+#cmakedefine PROFILER
+#cmakedefine USE_TABLE
