@@ -418,7 +418,6 @@ public:
 
 
 
-
 class CustomScene : public Scene {
 public:
 #ifdef USE_PR2

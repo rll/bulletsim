@@ -1434,7 +1434,6 @@ void CustomScene::run() {
     //mirror about centerline along y direction;
     //centerline defined by 2 points
     float mid_x = (max_x + min_x)/2;
-
     point_reflector.reset(new PointReflector(mid_x, min_y, max_y));
     //find node that most closely matches reflection of point
     for(int i = 0; i < node_pos.size(); i++)

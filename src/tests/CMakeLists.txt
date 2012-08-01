@@ -46,4 +46,4 @@ option (USE_RADIUS_CONTACT
 add_executable(test_colab_cloth test_colab_cloth.cpp)
 target_link_libraries(test_colab_cloth simulation robots profiler)
 
-add_subdirectory(GripperKinematicObject)
+add_subdirectory(CollabFolding)
