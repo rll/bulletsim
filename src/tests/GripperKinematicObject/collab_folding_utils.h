@@ -32,4 +32,9 @@ class PointReflector {
   btVector3 reflect(btVector3& vector_in);
 };
 
+/** Returns the Moore-Penrose psuedo inverse of the input matrix MAT.
+    This psuedo-inverse is the standard in MATLAB.
+
+    see : http://en.wikipedia.org/wiki/Moore-Penrose_pseudoinverse */
+Eigen::MatrixXf pinv(const Eigen::MatrixXf &mat);
 #endif

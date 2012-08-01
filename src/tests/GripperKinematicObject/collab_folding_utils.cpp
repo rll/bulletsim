@@ -26,3 +26,39 @@ btVector3 PointReflector::reflect(btVector3& vector_in) {
     v_out[0] = vector_in[0] - 2*(vector_in[0] - mid_x);
     return v_out;
 }
+
+/** Returns the Moore-Penrose psuedo inverse of the input matrix MAT.
+    This psuedo-inverse is the standard in MATLAB.
+
+    see : http://en.wikipedia.org/wiki/Moore-Penrose_pseudoinverse */
+Eigen::MatrixXf pinv(const Eigen::MatrixXf &mat) {
+
+  if ( mat.rows() < mat.cols() ) {
+    cout << "Pseudo-inverse error : number of cols > number of rows." << endl;
+    return Eigen::MatrixXf();
+  }
+  
+  // singular value decomposition.
+  Eigen::JacobiSVD<Eigen::MatrixXf>
+    svd(mat, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+  /** Build a diagonal matrix with the inverted singular values
+      The pseudo inverted singular matrix is formed by replacing
+      every nonzero entry by its reciprocal. 
+      Sufficiently small values are treated as zero. */
+  Eigen::MatrixXf singular_values = svd.singularValues();
+  Eigen::MatrixXf inverted_singular_values(svd.matrixV().cols(), 1);
+
+  for (int iRow = 0; iRow < singular_values.rows(); iRow += 1) {
+    if ( fabs(singular_values(iRow)) <= 1e-10 ) //Todo: Put epsilon in parameter	
+      inverted_singular_values(iRow, 0) = 0.;
+    else
+      inverted_singular_values(iRow,0) = 1./singular_values(iRow);
+  }
+
+  Eigen::MatrixXf mAdjointU = svd.matrixU().adjoint().
+    block(0, 0, singular_values.rows(), svd.matrixU().adjoint().cols());
+
+  // Pseudo-Inverse = V * S * U'
+  return (svd.matrixV() * inverted_singular_values.asDiagonal()) * mAdjointU;
+}
