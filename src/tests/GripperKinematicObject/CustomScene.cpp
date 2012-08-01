@@ -23,22 +23,22 @@ void CustomScene::regraspWithOneGripper
 }
 
  
-
 /* Creates a square cloth with side length 2s.
    The four coordinates of the cloth are:
    {(s,s) (-s,s,) (-s,-s) (s,-s)}
    Then, the center of the cloth (initially at (0,0,0)
    is translated to CENTER.*/
-BulletSoftObject::Ptr CustomScene::createCloth(btScalar s, const btVector3 &center) {
+BulletSoftObject::Ptr CustomScene::createCloth(btScalar s, 
+					       const btVector3 &center) {
   const int divs = 45;
-  btSoftBody *psb = btSoftBodyHelpers::CreatePatch(
-						   env->bullet->softBodyWorldInfo,
-						   center + btVector3(-s,-s,0),
-						   center + btVector3(+s,-s,0),
-						   center + btVector3(-s,+s,0),
-						   center + btVector3(+s,+s,0),
-						   divs, divs,
-						   0, true);
+  btSoftBody *psb =
+    btSoftBodyHelpers::CreatePatch(env->bullet->softBodyWorldInfo,
+				   center + btVector3(-s,-s,0),
+				   center + btVector3(+s,-s,0),
+				   center + btVector3(-s,+s,0),
+				   center + btVector3(+s,+s,0),
+				   divs, divs,
+				   0, true);
 
   psb->m_cfg.piterations = 10;//2;
   psb->m_cfg.collisions = btSoftBody::fCollision::CL_SS

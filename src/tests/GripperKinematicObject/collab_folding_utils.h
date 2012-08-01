@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include <BulletSoftBody/btSoftBodyHelpers.h>
+#include <BulletSoftBody/btSoftBody.h>
 #include <Eigen/Core>
 #include <Eigen/SVD>
 

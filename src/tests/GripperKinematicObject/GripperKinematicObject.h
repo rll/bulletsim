@@ -7,12 +7,9 @@
 #define _GRIPPER_KINEMATIC_OBJECT_
 
 #include "config.h"
-#include "simulation/softbodies.h"
-#include "simulation/config_bullet.h"
-#include <BulletSoftBody/btSoftBodyHelpers.h>
-#include <omp.h>
-
 #include "collab_folding_utils.h"
+
+#include "simulation/softbodies.h"
 
 /** The various states the GripperKinematic object can be in. */
 enum GripperState {GripperState_DONE, GripperState_CLOSING,
