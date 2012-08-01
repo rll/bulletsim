@@ -34,13 +34,12 @@ btVector3 PointReflector::reflect(btVector3& vector_in) {
 Eigen::MatrixXf pinv(const Eigen::MatrixXf &mat) {
 
   if ( mat.rows() < mat.cols() ) {
-    cout << "Pseudo-inverse error : number of cols > number of rows." << endl;
+    std::cout << "Pseudo-inverse error : number of cols > number of rows." << std::endl;
     return Eigen::MatrixXf();
   }
   
   // singular value decomposition.
-  Eigen::JacobiSVD<Eigen::MatrixXf>
-    svd(mat, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(mat, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
   /** Build a diagonal matrix with the inverted singular values
       The pseudo inverted singular matrix is formed by replacing

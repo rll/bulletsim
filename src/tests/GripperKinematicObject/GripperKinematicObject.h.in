@@ -13,7 +13,6 @@
 
 #include "collab_folding_utils.h"
 
-#cmakedefine USE_RADIUS_CONTACT
 
 /** The various states the GripperKinematic object can be in. */
 enum GripperState {GripperState_DONE, GripperState_CLOSING,

@@ -5,11 +5,11 @@
 #ifndef _COLAB_FOLDING_UTILS_
 #define _COLAB_FOLDING_UTILS_
 
-#include "simulation/simplescene.h"
-#include "simulation/softbodies.h"
-#include "simulation/config_bullet.h"
-#include "simulation/config_viewer.h"
+#include <vector>
+#include <boost/shared_ptr.hpp>
 #include <BulletSoftBody/btSoftBodyHelpers.h>
+#include <Eigen/Core>
+#include <Eigen/SVD>
 
 /** Simply copies the coordinates of the nodes in M_NODES
     into NODEPOSEVEC. */

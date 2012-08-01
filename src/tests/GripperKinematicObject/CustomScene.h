@@ -5,6 +5,12 @@
 #define _CUSTOM_SCENE_
 
 #include "collab_folding_utils.h"
+#include "GripperKinematicObject.h"
+#include "step_state.h"
+#include "PR2SoftBodyGripperAction.h"
+
+#include "simulation/simplescene.h"
+#include <omp.h>
 
 class CustomScene : public Scene {
 
@@ -22,7 +28,7 @@ public:
   GripperKinematicObject::Ptr left_gripper2, right_gripper2;
 
 
-  /* This structure maintains various state variables
+  /** This structure maintains various state variables
      which are changed during user interaction. 
 
     - transGrabberX, rotateGrabberX: booleans which select whether to
@@ -172,5 +178,13 @@ public:
        initializes various structures.*/
     void run();
 };
+
+
+/**class CustomKeyHandler : public osgGA::GUIEventHandler {
+  CustomScene &scene;
+ public:
+ CustomKeyHandler(CustomScene &scene_) : scene(scene_) { }
+  bool handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter&);
+  };**/
 
 #endif

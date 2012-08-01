@@ -5,12 +5,7 @@
 #ifndef _STEP_STATE_
 #define _STEP_STATE_
 
-#include "simulation/simplescene.h"
-#include "simulation/softbodies.h"
-#include "simulation/config_bullet.h"
-#include "simulation/config_viewer.h"
-#include <BulletSoftBody/btSoftBodyHelpers.h>
-
+//#include "simulation/simplescene.h"
 #include "GripperKinematicObject.h"
 
 /** A class (rather a structure) to represent the state of the

@@ -2,7 +2,31 @@
 #define _CUSTOM_KEY_HANDLER_
 
 #include "CustomScene.h"
+#include "simulation/config_bullet.h"
+#include "simulation/config_viewer.h"
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <google/profiler.h>
 
+#ifdef USE_PR2
+#include <openrave/kinbody.h>
+#include "robots/pr2.h"
+#endif
+
+#define PI 3.14159265
+
+//WARNING: THIS IS THE WRONG TRANSFORM, WILL NOT WORK FOR ROTATION!
+const btTransform TBullet_PR2GripperRight =
+  btTransform(btQuaternion(btVector3(0,1,0), PI/2),
+	      (btVector3(0,0,0))
+	      *btTransform(btQuaternion(btVector3(0,0,1),PI/2), btVector3(0,0,0))
+	      *btTransform(btQuaternion(btVector3(0,1,0),PI/2), btVector3(0,0,0)) );
+
+const btTransform TBullet_PR2GripperLeft = 
+  btTransform(btQuaternion(btVector3(0,1,0),PI/2),
+	      (btVector3(0,0,0))
+	      *btTransform(btQuaternion(btVector3(0,0,1),-PI/2),btVector3(0,0,0))
+	      *btTransform(btQuaternion(btVector3(0,1,0),3.14159265/2),btVector3(0,0,0)));
+                                                 
 class CustomKeyHandler : public osgGA::GUIEventHandler {
   CustomScene &scene;
  public:
