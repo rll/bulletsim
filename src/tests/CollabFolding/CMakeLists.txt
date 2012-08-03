@@ -12,7 +12,7 @@ option (USE_RADIUS_CONTACT
 option (USE_TABLE "Use a table in the simulation." OFF)
 option (DO_ROTATION "Calculate for roation of the gripers." ON)
 option (PROFILER "Profile the code." OFF)
-option (USE_PR2 "Use R2 in simulation." ON)
+option (USE_PR2 "Use R2 in simulation." OFF)
 
 # configuration file: #defines the above options
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"

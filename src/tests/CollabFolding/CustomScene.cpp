@@ -34,25 +34,26 @@ BulletSoftObject::Ptr CustomScene::createCloth(btScalar s,
   btSoftBody *psb =
     btSoftBodyHelpers::CreatePatch(env->bullet->softBodyWorldInfo,
 				   center + btVector3(-s,-s,0),
-				   center + btVector3(+s,-s,0),
+				   center + btVector3(+2*s,-s,0),
 				   center + btVector3(-s,+s,0),
-				   center + btVector3(+s,+s,0),
-				   divs, divs,
+				   center + btVector3(+2*s,+s,0),
+				   2*divs, divs,
 				   0, true);
 
   psb->m_cfg.piterations = 10;//2;
   psb->m_cfg.collisions = btSoftBody::fCollision::CL_SS
-    | btSoftBody::fCollision::CL_RS;
+    | btSoftBody::fCollision::CL_RS | btSoftBody::fCollision::CL_SELF;
+
   psb->m_cfg.kDF = 1.0;
   psb->getCollisionShape()->setMargin(0.05);
   btSoftBody::Material *pm = psb->appendMaterial();
-  //pm->m_kLST = 0.2;//0.1; //makes it rubbery (handles self collisions better)
+  pm->m_kLST = 0.2;//0.1; //makes it rubbery (handles self collisions better)
   psb->m_cfg.kDP = 0.1;//0.05;
   psb->generateBendingConstraints(2, pm);
   psb->randomizeConstraints();
   psb->setTotalMass(1, true);
-  psb->generateClusters(0);
-  //psb->generateClusters(500);
+  //psb->generateClusters(0);
+  psb->generateClusters(500);
   return BulletSoftObject::Ptr(new BulletSoftObject(psb));
 }
 
@@ -67,7 +68,6 @@ void CustomScene::doJTracking() {
   else
     bInTrackingLoop = true;
 
-
   loopState.skip_step = true;
   int numnodes = clothptr->softBody->m_nodes.size();
 
@@ -79,8 +79,8 @@ void CustomScene::doJTracking() {
   Eigen::VectorXf V_trans;
   btTransform transtm1,transtm2;
   Eigen::MatrixXf J;
-  while(bTracking) {
 
+  while(bTracking) {
     for(int i = 0; i < numnodes*3;i++)
       V_step(i) = 0;
 
@@ -193,6 +193,7 @@ void CustomScene::doJTracking() {
   loopState.skip_step = false;
   bInTrackingLoop = false;
 }
+
 
 /** Simulates in a new fork.*/
 void CustomScene::simulateInNewFork(StepState& innerstate, float sim_time,
@@ -706,8 +707,8 @@ void CustomScene::run() {
 
   /** Mirror about centerline along y direction
 
-      ______|______ max y
-      |      |      |
+               ______|______ max y
+              |      |      |
       y HUMAN |   CLO|TH    |  ROBOT
       ^       |      |      |
       |       |______|______|

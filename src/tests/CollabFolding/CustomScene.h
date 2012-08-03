@@ -12,6 +12,8 @@
 #include "PR2SoftBodyGripperAction.h"
 
 #include "simulation/simplescene.h"
+#include <BulletSoftBody/btSoftBodyHelpers.h>
+
 #include <omp.h>
 
 #ifdef USE_PR2

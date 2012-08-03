@@ -60,24 +60,21 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
             break;
         }
 
-        case 'v':
-        {
-            scene.regraspWithOneGripper(scene.right_gripper1,scene.right_gripper2);
-            break;
+        case 'v': {
+	  scene.regraspWithOneGripper(scene.right_gripper1,scene.right_gripper2);
+	  break;
         }
 
-        case 'f':
-        {
-            scene.regraspWithOneGripper(scene.right_gripper1,scene.left_gripper1);
-            scene.left_gripper1->setWorldTransform(btTransform(btQuaternion(0,0,0,1), btVector3(0,0,100)));
-            break;
+        case 'f': {
+	  scene.regraspWithOneGripper(scene.right_gripper1,scene.left_gripper1);
+	  scene.left_gripper1->setWorldTransform(btTransform(btQuaternion(0,0,0,1), btVector3(0,0,100)));
+	  break;
         }
 
-        case 'g':
-        {
-            scene.regraspWithOneGripper(scene.right_gripper2,scene.left_gripper2);
-            scene.left_gripper2->setWorldTransform(btTransform(btQuaternion(0,0,0,1), btVector3(0,0,110)));
-            break;
+        case 'g': {
+	  scene.regraspWithOneGripper(scene.right_gripper2,scene.left_gripper2);
+	  scene.left_gripper2->setWorldTransform(btTransform(btQuaternion(0,0,0,1), btVector3(0,0,110)));
+	  break;
         }
 
 
@@ -134,28 +131,21 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
 
             break;
 
-        case 'j':
-            {
+        case 'j': {
 #ifdef PROFILER
-                if(!scene.bTracking)
-                    ProfilerStart("profile.txt");
-                else
-                    ProfilerStop();
+	  if(!scene.bTracking)
+	    ProfilerStart("profile.txt");
+	  else
+	    ProfilerStop();
 #endif
-
-               nodeArrayToNodePosVector(scene.clothptr->softBody->m_nodes, scene.prev_node_pos);
-               scene.bTracking = !scene.bTracking;
-               if(!scene.bTracking)
-                   scene.plot_points->setPoints(std::vector<btVector3> (), std::vector<btVector4> ());
-
-                break;
+	  nodeArrayToNodePosVector(scene.clothptr->softBody->m_nodes, scene.prev_node_pos);
+	  scene.bTracking = !scene.bTracking;
+	  if(!scene.bTracking) // clear the points to plot : show no points
+	    scene.plot_points->setPoints(std::vector<btVector3> (), std::vector<btVector4> ());
+	  break;
             }
-
-//        case 'b':
-//            scene.stopLoop();
-//            break;
-        }
-        break;
+    }
+    break;
 
     case osgGA::GUIEventAdapter::KEYUP:
         switch (ea.getKey()) {
@@ -176,8 +166,6 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
             scene.inputState.transGrabber3 = false; break;
         case 'r':
             scene.inputState.rotateGrabber3 = false; break;
-
-
         }
         break;
 
@@ -199,7 +187,8 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
                     scene.inputState.dx = scene.inputState.lastX - ea.getXnormalized();
                     scene.inputState.dy = ea.getYnormalized() - scene.inputState.lastY;
                 }
-                scene.inputState.lastX = ea.getXnormalized(); scene.inputState.lastY = ea.getYnormalized();
+                scene.inputState.lastX = ea.getXnormalized();
+		scene.inputState.lastY = ea.getYnormalized();
                 scene.inputState.startDragging = false;
 
                 // get our current view
@@ -212,30 +201,23 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
                 // compute basis vectors for the plane of view
                 // (the plane normal to the ray from the camera to the center of the scene)
                 btVector3 normal = (to - from).normalized();
-                btVector3 yVec = (up - (up.dot(normal))*normal).normalized(); //FIXME: is this necessary with osg?
+
+		//FIXME: is this necessary with osg?
+                btVector3 yVec = (up - (up.dot(normal))*normal).normalized(); 
                 btVector3 xVec = normal.cross(yVec);
-                btVector3 dragVec = SceneConfig::mouseDragScale*10 * (scene.inputState.dx*xVec + scene.inputState.dy*yVec);
-                //printf("dx: %f dy: %f\n",scene.inputState.dx,scene.inputState.dy);
+                btVector3 dragVec = (SceneConfig::mouseDragScale*10
+				     * (scene.inputState.dx*xVec + scene.inputState.dy*yVec));
 
                 btTransform origTrans;
-                if (scene.inputState.transGrabber0 || scene.inputState.rotateGrabber0)
-                {
-                    scene.left_gripper1->getWorldTransform(origTrans);
+                if (scene.inputState.transGrabber0 || scene.inputState.rotateGrabber0) {
+		  scene.left_gripper1->getWorldTransform(origTrans);
+                } else if(scene.inputState.transGrabber1 || scene.inputState.rotateGrabber1) {
+		  scene.left_gripper2->getWorldTransform(origTrans);
+                } else if(scene.inputState.transGrabber2 || scene.inputState.rotateGrabber2) {
+		  scene.right_gripper1->getWorldTransform(origTrans);
+                } else if(scene.inputState.transGrabber3 || scene.inputState.rotateGrabber3) {
+		  scene.right_gripper2->getWorldTransform(origTrans);
                 }
-                else if(scene.inputState.transGrabber1 || scene.inputState.rotateGrabber1)
-                {
-                    scene.left_gripper2->getWorldTransform(origTrans);
-                }
-                else if(scene.inputState.transGrabber2 || scene.inputState.rotateGrabber2)
-                {
-                    scene.right_gripper1->getWorldTransform(origTrans);
-                }
-                else if(scene.inputState.transGrabber3 || scene.inputState.rotateGrabber3)
-                {
-                    scene.right_gripper2->getWorldTransform(origTrans);
-                }
-
-                //printf("origin: %f %f %f\n",origTrans.getOrigin()[0],origTrans.getOrigin()[1],origTrans.getOrigin()[2]);
 
                 btTransform newTrans(origTrans);
 
@@ -256,43 +238,31 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
                     if (rot.length() > 0.99f && rot.length() < 1.01f)
                         newTrans.setRotation(rot * origTrans.getRotation());
                 }
-                //printf("newtrans: %f %f %f\n",newTrans.getOrigin()[0],newTrans.getOrigin()[1],newTrans.getOrigin()[2]);
-                //softbody ->addForce(const btVector3& forceVector,int node)
 
-//                std::vector<btVector3> plot_line;
-//                std::vector<btVector4> plot_color;
-//                plot_line.push_back(origTrans.getOrigin());
-//                plot_line.push_back(origTrans.getOrigin() + 100*(newTrans.getOrigin()- origTrans.getOrigin()));
-//                plot_color.push_back(btVector4(1,0,0,1));
-//                scene.drag_line->setPoints(plot_line,plot_color);
-                //btTransform TBullet_PR2Gripper = btTransform(btQuaternion(btVector3(0,1,0),3.14159265/2),btVector3(0,0,0));
-                //btTransform TOR_newtrans = TBullet_PR2Gripper*newTrans;
-                //TOR_newtrans.setOrigin(newTrans.getOrigin());
-                if (scene.inputState.transGrabber0 || scene.inputState.rotateGrabber0)
-                {
-                    scene.left_gripper1->setWorldTransform(newTrans);
-#ifdef USE_PR2
-                    btTransform TOR_newtrans = newTrans*TBullet_PR2GripperRight;
-                    TOR_newtrans.setOrigin(newTrans.getOrigin());
-                    scene.pr2m.pr2Right->moveByIK(TOR_newtrans,SceneConfig::enableRobotCollision, true);
-#endif
+
+		// reflect the change in positions of the grabbers in the simulation.
+                if (scene.inputState.transGrabber0 || scene.inputState.rotateGrabber0) {
+		  scene.left_gripper1->setWorldTransform(newTrans);
+                #ifdef USE_PR2
+		  btTransform TOR_newtrans = newTrans*TBullet_PR2GripperRight;
+		  TOR_newtrans.setOrigin(newTrans.getOrigin());
+		  scene.pr2m.pr2Right->moveByIK(TOR_newtrans,
+						SceneConfig::enableRobotCollision, true);
+                #endif
+                } else if(scene.inputState.transGrabber1 || scene.inputState.rotateGrabber1) {
+		  scene.left_gripper2->setWorldTransform(newTrans);
+                #ifdef USE_PR2
+		  btTransform TOR_newtrans = newTrans*TBullet_PR2GripperLeft;
+		  TOR_newtrans.setOrigin(newTrans.getOrigin());
+		  scene.pr2m.pr2Left->moveByIK(TOR_newtrans,
+					       SceneConfig::enableRobotCollision, true);
+                #endif
                 }
-                else if(scene.inputState.transGrabber1 || scene.inputState.rotateGrabber1)
-                {
-                    scene.left_gripper2->setWorldTransform(newTrans);
-#ifdef USE_PR2
-                    btTransform TOR_newtrans = newTrans*TBullet_PR2GripperLeft;
-                    TOR_newtrans.setOrigin(newTrans.getOrigin());
-                    scene.pr2m.pr2Left->moveByIK(TOR_newtrans,SceneConfig::enableRobotCollision, true);
-#endif
+                else if(scene.inputState.transGrabber2 || scene.inputState.rotateGrabber2) {
+		  scene.right_gripper1->setWorldTransform(newTrans);
                 }
-                else if(scene.inputState.transGrabber2 || scene.inputState.rotateGrabber2)
-                {
-                    scene.right_gripper1->setWorldTransform(newTrans);
-                }
-                else if(scene.inputState.transGrabber3 || scene.inputState.rotateGrabber3)
-                {
-                    scene.right_gripper2->setWorldTransform(newTrans);
+                else if(scene.inputState.transGrabber3 || scene.inputState.rotateGrabber3) {
+		  scene.right_gripper2->setWorldTransform(newTrans);
                 }
                 return true;
             }

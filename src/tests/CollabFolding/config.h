@@ -1,4 +1,4 @@
-#define USE_PR2
+/* #undef USE_PR2 */
 #define DO_ROTATION
 #define USE_RADIUS_CONTACT
 /* #undef PROFILER */

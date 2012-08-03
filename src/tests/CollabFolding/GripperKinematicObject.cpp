@@ -68,7 +68,6 @@ void GripperKinematicObject::toggleattach(btSoftBody * psb, double radius) {
       int closest_body = -1;
       unsigned int num_anchors = 0;
       for(int j = 0; j < psb->m_nodes.size(); j += 1) {
-
 	if((psb->m_nodes[j].m_x - cur_tm.getOrigin()).length() < radius) {
 	  num_anchors += 1;
 	  if( (psb->m_nodes[j].m_x - top_tm.getOrigin()).length() <
@@ -127,7 +126,7 @@ void GripperKinematicObject::toggleattach(btSoftBody * psb, double radius) {
 	  appendAnchor(psb, node, rigidBody);
 	  cout << "\tAppending anchor to node indexed: "<< closest_ind << "\n";
 	}
-      }
+      
     #endif
     }
     bAttached = !bAttached;
