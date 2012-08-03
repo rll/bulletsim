@@ -2,6 +2,34 @@
 #include "CustomKeyHandler.h"
 
 
+/** Raycasts from SOURCE to all the nodes of PSB
+    and returns a vector of the same size as the nodes of PSB
+    depicting whether that node is visible or not. */
+void CustomScene::checkNodeVisibility(btVector3 camera_origin,
+				      boost::shared_ptr<btSoftBody> psb) {
+
+  plot_points->setPoints(std::vector<btVector3> (), std::vector<btVector4> ());
+
+  std::vector<btVector3> plotpoints;
+  std::vector<btVector4> color;
+
+  plotpoints.push_back(camera_origin);
+  color.push_back(btVector4(3,1,0,1));
+
+  for (int i=0; i < psb->m_nodes.size(); i += 1) {
+    btVector3 node_pos = psb->m_nodes[i].m_x;
+    btSoftBody::sRayCast sol;
+    bool b = psb->rayTest (camera_origin, node_pos, sol);
+
+    if (sol.fraction >= 0.9) { // iff fraction -> 1 : means the ray can hit the node.
+      plotpoints.push_back(node_pos);
+      color.push_back(btVector4(2,0,0,1));
+    }
+  }
+  plot_points->setPoints(plotpoints,color);
+}
+
+
 /** Attaches GRIPPER_TO_ATTACH with the softbody and detaches
     GRIPPER_TO_DETACH from it.*/
 void CustomScene::regraspWithOneGripper

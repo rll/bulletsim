@@ -173,12 +173,19 @@ public:
   void drawAxes();
 
   /** Attaches GRIPPER_TO_ATTACH with the softbody and detaches
-      GRIPPER_TO_DETACH from it.*/
+      GRIPPER_TO_DETACH from it. */
   void regraspWithOneGripper(GripperKinematicObject::Ptr gripper_to_attach,
 			     GripperKinematicObject::Ptr  gripper_to_detach);
 
   /* Sets up the scene and UI event handlers,
-     initializes various structures.*/
+     initializes various structures. */
   void run();
+
+
+  /** Raycasts from SOURCE to all the nodes of PSB
+      and returns a vector of the same size as the nodes of PSB
+      depicting whether that node is visible or not. */
+  void checkNodeVisibility(btVector3 camera_origin,
+			   boost::shared_ptr<btSoftBody> psb);
 };
 #endif

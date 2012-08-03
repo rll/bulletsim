@@ -38,6 +38,12 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
       scene.inputState.transGrabber3 = true; break;
     case 'r':
       scene.inputState.rotateGrabber3 = true; break;
+    case 'm': {
+      btVector3 camera_pos(10.0,0.0,20.0);
+      scene.checkNodeVisibility(camera_pos, scene.clothptr->softBody);
+      break;
+    }
+
 
 #ifdef USE_PR2
         case '9':
