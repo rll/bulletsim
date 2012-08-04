@@ -26,6 +26,7 @@ target_link_libraries(CustomScene StepState
                                   GripperKinematicObject
 				  CollabUtils
 				  simulation
+				  ${PCL_LIBRARIES}
 				  profiler robots)
 
 add_library(CustomKeyHandler CustomKeyHandler.cpp)

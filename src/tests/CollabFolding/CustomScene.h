@@ -15,6 +15,10 @@
 #include <BulletSoftBody/btSoftBodyHelpers.h>
 
 #include <omp.h>
+#include <iostream>
+#include <sstream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
 
 #ifdef USE_PR2
 #include <openrave/kinbody.h>
@@ -129,6 +133,9 @@ public:
      is translated to CENTER.*/
   BulletSoftObject::Ptr createCloth(btScalar s, const btVector3 &center);
 
+  /* Creates a cloth with width=2*w and length=2*l, centered at CENTER.*/
+  BulletSoftObject::Ptr createCloth(btScalar w, btScalar l, 
+				    const btVector3 &center);
 
   void createFork();
   void destroyFork();
@@ -185,7 +192,12 @@ public:
   /** Raycasts from SOURCE to all the nodes of PSB
       and returns a vector of the same size as the nodes of PSB
       depicting whether that node is visible or not. */
-  void checkNodeVisibility(btVector3 camera_origin,
+  std::vector<btVector3> checkNodeVisibility(btVector3 camera_origin,
 			   boost::shared_ptr<btSoftBody> psb);
+
+  /** Saves the points in the scene.plotPoints to a file in PCL format. */
+  void savePoints(std::vector<btVector3> &points, btScalar scale,
+		  std::string _fname="sim_cloud");
+
 };
 #endif

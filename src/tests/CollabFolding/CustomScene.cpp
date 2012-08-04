@@ -2,10 +2,35 @@
 #include "CustomKeyHandler.h"
 
 
+/** Saves the points in the scenep.lotPoints to a file in PCL format. */
+void CustomScene::savePoints(std::vector<btVector3> &points, btScalar scale,
+			     std::string _fname) {
+
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+  cloud.width    = points.size();
+  cloud.height   = 1;
+  cloud.is_dense = false;
+  cloud.points.resize (cloud.width * cloud.height);
+  
+  for (size_t i = 0; i < cloud.points.size(); i+=1) {
+    cloud.points[i].x = scale * points[i].x();
+    cloud.points[i].y = scale * points[i].y();
+    cloud.points[i].z = scale * points[i].z();
+  }
+
+  stringstream ss;
+  int rnd = rand()/1000;
+  rnd /=100;
+  ss << _fname <<rnd <<".pcd";
+  pcl::io::savePCDFileASCII (ss.str(), cloud);
+  cout << "Saved " << cloud.points.size ()
+       << " data points to " << ss.str()<<"."<< endl;
+}
+
 /** Raycasts from SOURCE to all the nodes of PSB
     and returns a vector of the same size as the nodes of PSB
     depicting whether that node is visible or not. */
-void CustomScene::checkNodeVisibility(btVector3 camera_origin,
+std::vector<btVector3> CustomScene::checkNodeVisibility(btVector3 camera_origin,
 				      boost::shared_ptr<btSoftBody> psb) {
 
   plot_points->setPoints(std::vector<btVector3> (), std::vector<btVector4> ());
@@ -21,12 +46,13 @@ void CustomScene::checkNodeVisibility(btVector3 camera_origin,
     btSoftBody::sRayCast sol;
     bool b = psb->rayTest (camera_origin, node_pos, sol);
 
-    if (sol.fraction >= 0.9) { // iff fraction -> 1 : means the ray can hit the node.
+    if (sol.fraction >= 0.99) { // iff fraction -> 1 : means the ray can hit the node.
       plotpoints.push_back(node_pos);
       color.push_back(btVector4(2,0,0,1));
     }
   }
   plot_points->setPoints(plotpoints,color);
+  return plotpoints;
 }
 
 
@@ -55,7 +81,7 @@ void CustomScene::regraspWithOneGripper
    The four coordinates of the cloth are:
    {(s,s) (-s,s,) (-s,-s) (s,-s)}
    Then, the center of the cloth (initially at (0,0,0)
-   is translated to CENTER.*/
+   is translated to CENTER. */
 BulletSoftObject::Ptr CustomScene::createCloth(btScalar s, 
 					       const btVector3 &center) {
   const int divs = 45;
@@ -85,7 +111,45 @@ BulletSoftObject::Ptr CustomScene::createCloth(btScalar s,
   return BulletSoftObject::Ptr(new BulletSoftObject(psb));
 }
 
+/* Creates a square cloth with side length 2s.
+   The four coordinates of the cloth are:
+   {(s,s) (-s,s,) (-s,-s) (s,-s)}
+   Then, the center of the cloth (initially at (0,0,0)
+   is translated to CENTER. */
+BulletSoftObject::Ptr CustomScene::createCloth(btScalar _w, btScalar _l, 
+					       const btVector3 &center) {
+  const int x_res = (int) (_l*70);
+  const int y_res = (int) (_w*70);
 
+  btScalar l = GeneralConfig::scale*_l*0.5;
+  btScalar w = GeneralConfig::scale*_w*0.5;
+
+  btSoftBody *psb =
+    btSoftBodyHelpers::CreatePatch(env->bullet->softBodyWorldInfo,
+				   center + btVector3(-l,-w,5),
+				   center + btVector3(l,-w,5),
+				   center + btVector3(-l,w,5),
+				   center + btVector3(l,w,5),
+				   x_res, y_res,
+				   0, true);
+  cout<<"DONE: Cloth"<<endl;
+  
+  psb->m_cfg.piterations = 10;//2;
+  psb->m_cfg.collisions = btSoftBody::fCollision::CL_SS
+    | btSoftBody::fCollision::CL_RS | btSoftBody::fCollision::CL_SELF;
+
+  psb->m_cfg.kDF = 1.0;
+  psb->getCollisionShape()->setMargin(0.05);
+  btSoftBody::Material *pm = psb->appendMaterial();
+  pm->m_kLST = 0.2;//0.1; //makes it rubbery (handles self collisions better)
+  psb->m_cfg.kDP = 0.1;//0.05;
+  psb->generateBendingConstraints(2, pm);
+  psb->randomizeConstraints();
+  psb->setTotalMass(1, true);
+  psb->generateClusters(0);
+  //psb->generateClusters(500);
+  return BulletSoftObject::Ptr(new BulletSoftObject(psb));  
+}
 
 /** Main loop which is responsible for jacobian tracking. */
 void CustomScene::doJTracking() {
@@ -597,9 +661,14 @@ void CustomScene::run() {
   table->rigidBody->setFriction(1);
   env->add(table);
 #endif
-  BulletSoftObject::Ptr 
+  /* ORIGINAL CODE*/
+  cout<<"SCALE: "<<GeneralConfig::scale<<endl;
+  /**BulletSoftObject::Ptr 
     cloth(createCloth(GeneralConfig::scale * 0.25,
-		      GeneralConfig::scale * btVector3(0.7, 0, table_height+0.01)));
+    GeneralConfig::scale * btVector3(0.7, 0, table_height+0.01)));**/
+  
+  BulletSoftObject::Ptr 
+    cloth(createCloth(0.46,0.92, btVector3(0.0, 0.0, 0.0)));
 
 
   btSoftBody* psb = cloth->softBody.get();

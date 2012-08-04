@@ -43,8 +43,13 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
       scene.checkNodeVisibility(camera_pos, scene.clothptr->softBody);
       break;
     }
-
-
+    case 'z': {
+      btVector3 camera_pos(10.0,0.0,20.0);
+      std::vector<btVector3> points =
+	scene.checkNodeVisibility(camera_pos, scene.clothptr->softBody);
+      scene.savePoints(points, (1.0/(GeneralConfig::scale*0.5)));
+      break;
+    }
 #ifdef USE_PR2
         case '9':
             scene.leftAction->reset();
