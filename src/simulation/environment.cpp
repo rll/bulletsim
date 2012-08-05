@@ -20,11 +20,11 @@ BulletInstance::BulletInstance() {
 }
 
 BulletInstance::~BulletInstance() {
-    delete dynamicsWorld;
-    delete solver;
-    delete dispatcher;
-    delete collisionConfiguration;
-    delete broadphase;
+  delete dynamicsWorld;
+  delete solver;
+  delete dispatcher;
+  delete collisionConfiguration;
+  delete broadphase;
 }
 
 void BulletInstance::setGravity(const btVector3 &gravity) {

@@ -56,9 +56,11 @@ public:
     // CONSTRUCTORS
     // our own construction info class, which forces motionstate to be null
     struct CI : public btRigidBody::btRigidBodyConstructionInfo {
-        CI(btScalar mass, btCollisionShape *collisionShape, const btVector3 &localInertia=btVector3(0,0,0)) :
-            btRigidBody::btRigidBodyConstructionInfo(mass, NULL, collisionShape, localInertia) { }
+    CI(btScalar mass, btCollisionShape *collisionShape,
+       const btVector3 &localInertia=btVector3(0,0,0)) :
+      btRigidBody::btRigidBodyConstructionInfo(mass, NULL, collisionShape, localInertia) { }
     };
+
     BulletObject(CI ci, const btTransform &initTrans, bool isKinematic_=false);
 
     // this constructor computes a ConstructionInfo for you
