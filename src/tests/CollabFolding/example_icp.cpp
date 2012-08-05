@@ -42,7 +42,7 @@ simpleVis (pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1,
 int main (int argc, char** argv) {
 
   std::string real = "cloud_data1804289383.pcd";
-  std::string sim  = "sim_cloud_init.pcd";//"sim_cloud17146.pcd";
+  std::string sim  = "sim_cloud17146.pcd";//"sim_cloud_init.pcd";
  
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr
@@ -68,21 +68,12 @@ int main (int argc, char** argv) {
 	   0,   0,  -1,   2.0,
 	   0,   0,   0,   1.0;
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr
-    cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
-
-  pcl::transformPointCloud(*cloud_sim, *cloud_transformed, guess);
-
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer1
-    = simpleVis(cloud_real, cloud_transformed);
-
-
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-  icp.setInputCloud(cloud_transformed);
+  icp.setInputCloud(cloud_sim);
   icp.setInputTarget(cloud_real);
   icp.setMaxCorrespondenceDistance (0.1);
   pcl::PointCloud<pcl::PointXYZ> cloud_final;
-  icp.align(cloud_final);
+  icp.align(cloud_final, guess);
 
 
   std::cout << "has converged:" << icp.hasConverged() << " score: " <<
@@ -93,10 +84,10 @@ int main (int argc, char** argv) {
 	    << " seconds." << std::endl;
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr final(&cloud_final);  
+
   boost::shared_ptr<pcl::visualization::PCLVisualizer> 
-  viewer2 = simpleVis(cloud_real, final);
+  viewer = simpleVis(cloud_real, final);
   while (!viewer2->wasStopped ()) {
-    viewer1->spinOnce(100);
     viewer2->spinOnce(100);
     boost::this_thread::sleep (boost::posix_time::microseconds (100000));
   }

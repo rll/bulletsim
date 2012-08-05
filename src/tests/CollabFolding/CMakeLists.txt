@@ -34,3 +34,6 @@ target_link_libraries(CustomKeyHandler CustomScene)
 
 add_executable(test_folding test_collab_folding.cpp)
 target_link_libraries(test_folding CustomScene CustomKeyHandler)
+
+add_executable (icp example_icp.cpp)
+target_link_libraries (icp ${PCL_LIBRARIES})

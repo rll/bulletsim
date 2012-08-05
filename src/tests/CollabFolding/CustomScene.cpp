@@ -11,7 +11,8 @@ void CustomScene::savePoints(std::vector<btVector3> &points, btScalar scale,
   cloud.height   = 1;
   cloud.is_dense = false;
   cloud.points.resize (cloud.width * cloud.height);
-  
+  scale *= 0.5;
+
   for (size_t i = 0; i < cloud.points.size(); i+=1) {
     cloud.points[i].x = scale * points[i].x();
     cloud.points[i].y = scale * points[i].y();
