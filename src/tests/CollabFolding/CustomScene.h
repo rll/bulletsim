@@ -31,42 +31,43 @@ public:
     PR2SoftBodyGripperAction::Ptr leftAction, rightAction;
     PR2Manager pr2m;
 #endif
-     
+      
+    std::vector<GripperKinematicObject::Ptr> grippers;
 
-  GripperKinematicObject::Ptr left_gripper1, right_gripper1,
-    left_gripper1_orig, right_gripper1_orig,
-    left_gripper1_fork, right_gripper1_fork;
+    GripperKinematicObject::Ptr left_gripper1, right_gripper1,
+      left_gripper1_orig, right_gripper1_orig,
+      left_gripper1_fork, right_gripper1_fork;
+    
+    GripperKinematicObject::Ptr left_gripper2, right_gripper2;
+    
 
-  GripperKinematicObject::Ptr left_gripper2, right_gripper2;
+    /** This structure maintains various state variables
+	which are changed during user interaction. 
 
+	- transGrabberX, rotateGrabberX: booleans which select whether to
+	translate/ rotate grabber number X.
 
-  /** This structure maintains various state variables
-     which are changed during user interaction. 
+	- startDragging: is true when the mouse button is pressed and
+	mouse is being moved by the user.
 
-    - transGrabberX, rotateGrabberX: booleans which select whether to
-                                    translate/ rotate grabber number X.
+	- dx,dy : change in mouse position.
 
-    - startDragging: is true when the mouse button is pressed and
-                    mouse is being moved by the user.
+	- lastX,lastY : used to store last mouse position. */
+    struct {
+      bool transGrabber0,rotateGrabber0,
+	transGrabber1,rotateGrabber1,
+	transGrabber2,rotateGrabber2,
+	transGrabber3,rotateGrabber3;
+      bool startDragging;
+      float dx, dy, lastX, lastY;
+    } inputState;
 
-    - dx,dy : change in mouse position.
+    /** Number of automatic grippers in the scene. */
+    int num_auto_grippers;
 
-    - lastX,lastY : used to store last mouse position. */
-  struct {
-    bool transGrabber0,rotateGrabber0,
-      transGrabber1,rotateGrabber1,
-      transGrabber2,rotateGrabber2,
-      transGrabber3,rotateGrabber3;
-    bool startDragging;
-    float dx, dy, lastX, lastY;
-  } inputState;
-
-  /** Number of automatic grippers in the scene. */
-  int num_auto_grippers;
-
-  /** The time for which to simulate physics to calculate
-      dx (change in position of the cloth) for computing the Jacobian. */
-  float jacobian_sim_time;
+    /** The time for which to simulate physics to calculate
+	dx (change in position of the cloth) for computing the Jacobian. */
+    float jacobian_sim_time;
 
   
   bool bTracking, bInTrackingLoop;
@@ -199,5 +200,28 @@ public:
   void savePoints(std::vector<btVector3> &points, btScalar scale,
 		  std::string _fname="sim_cloud");
 
+  /** Returns true iff, the || g1 - g2|| <= _THRESH.
+      Where the distance is defined as: NORM of the location of origins
+      of the two grippers. */
+  bool areClose(GripperKinematicObject::Ptr &g1,
+		GripperKinematicObject::Ptr &g2, btScalar _thresh);
+
+  /** Loops over all pairs of the 4 grippers, and merges teh grip into one,
+      if they are close enough and holds the other end of the cloth.*/
+  void mergeGrippers(btSoftBody *psb, btScalar _close_thresh=0.005);
+
+
+  /** Returns the average of the transformations of the gripper G1 and G2. */
+  btTransform getAverageTransform(GripperKinematicObject::Ptr &g1,
+				  GripperKinematicObject::Ptr &g2);
+
+  
+  /** Returns the coordinates of the last point directly below (-z) SOURCE_PT
+      on the cloth represented by PSB. */
+  btVector3 getDownPoint(btVector3 &source_pt, btSoftBody* psb,
+			 btScalar radius=0.02);
+
+  /** Returns ||(v1.x, v1.y) - (v2.x, v2.y)||. */
+  btScalar inline getXYDistance(btVector3 &v1, btVector3 &v2);
 };
 #endif

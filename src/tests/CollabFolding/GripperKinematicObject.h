@@ -164,6 +164,25 @@ class GripperKinematicObject : public CompoundObject<BoxObject> {
   }
 
 
+  /* Copies (soft) the members of this gripper to GRIPPER. */
+  void copy(GripperKinematicObject::Ptr gripper) {
+    gripper->apperture = apperture;
+    gripper->cur_tm = cur_tm;
+    gripper->bOpen = bOpen;
+    gripper->state = state;
+    gripper->closed_gap = closed_gap;
+    gripper->vattached_node_inds = vattached_node_inds;
+    gripper->halfextents = halfextents;
+    gripper->bAttached = bAttached;
+
+    gripper->children.clear();
+    gripper->children.reserve(children.size());
+    ChildVector::const_iterator iter;
+    for (iter = children.begin(); iter != children.end(); iter++)
+	gripper->children.push_back(BoxObject::Ptr());
+  }
+
+
   /* Opens/closes the gripper, while interacting with the given
      softBody PSB.
      Successive calls to this function update the gripper's jaws.

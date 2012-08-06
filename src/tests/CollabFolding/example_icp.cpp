@@ -87,8 +87,8 @@ int main (int argc, char** argv) {
 
   boost::shared_ptr<pcl::visualization::PCLVisualizer> 
   viewer = simpleVis(cloud_real, final);
-  while (!viewer2->wasStopped ()) {
-    viewer2->spinOnce(100);
+  while (!viewer->wasStopped ()) {
+    viewer->spinOnce(100);
     boost::this_thread::sleep (boost::posix_time::microseconds (100000));
   }
 

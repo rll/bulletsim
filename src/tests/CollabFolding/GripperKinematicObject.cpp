@@ -126,7 +126,7 @@ void GripperKinematicObject::toggleattach(btSoftBody * psb, double radius) {
 	  appendAnchor(psb, node, rigidBody);
 	  cout << "\tAppending anchor to node indexed: "<< closest_ind << "\n";
 	}
-      
+      }
     #endif
     }
     bAttached = !bAttached;
@@ -321,3 +321,54 @@ void GripperKinematicObject::toggle() {
 
     bOpen = !bOpen;
 }
+
+/** Closes the gripper, attaching to any nodes of PSB in the way of closing. 
+void GripperKinematicObject::attach_incremental(btSoftBody* psb) {
+  if (bAttached)
+    toggleattach(psb);
+
+  if (state == GripperState_DONE) return;
+
+  if(state == GripperState_OPENING && bAttached)
+    toggleattach(psb);
+    
+    btTransform top_tm;
+    btTransform bottom_tm;
+    children[0]->motionState->getWorldTransform(top_tm);
+    children[1]->motionState->getWorldTransform(bottom_tm);
+
+    // The step length to move the jaws by in each call to this function.
+    const double STEP_SIZE = 0.005;
+
+    if(state == GripperState_CLOSING) {
+      top_tm.setOrigin(top_tm.getOrigin()
+		       + STEP_SIZE * top_tm.getBasis().getColumn(2));
+      bottom_tm.setOrigin(bottom_tm.getOrigin()
+			  - STEP_SIZE * bottom_tm.getBasis().getColumn(2));
+    } else if(state == GripperState_OPENING) {
+      top_tm.setOrigin(top_tm.getOrigin()
+		       - STEP_SIZE * top_tm.getBasis().getColumn(2));
+      bottom_tm.setOrigin(bottom_tm.getOrigin()
+			  + STEP_SIZE * bottom_tm.getBasis().getColumn(2));
+    }
+
+    children[0]->motionState->setKinematicPos(top_tm);
+    children[1]->motionState->setKinematicPos(bottom_tm);
+
+    double current_gap_length =
+      (top_tm.getOrigin() - bottom_tm.getOrigin()).length();
+
+    if(state == GripperState_CLOSING
+       && current_gap_length <= (closed_gap + 2*halfextents[2])) {
+      state = GripperState_DONE;
+      bOpen = false;
+      if(!bAttached)
+	toggleattach(psb);
+    }
+
+    if(state == GripperState_OPENING && current_gap_length >= apperture) {
+      state = GripperState_DONE;
+      bOpen = true;
+    }
+}
+*/

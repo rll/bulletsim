@@ -2,6 +2,84 @@
 #include "CustomKeyHandler.h"
 
 
+void CustomScene::mergeGrippers(btSoftBody *psb, btScalar _close_thresh) {
+  for(int i = 0; i < grippers.size(); i += 1) {
+    for(int j = i+1; j < grippers.size(); j+=1) {
+      if (areClose(grippers[i], grippers[j])) {
+
+	GripperKinematicObject::Ptr new_gripper1, old_gripper1,
+	  new_gripper2, old_gripper2;
+	old_gripper1 = grippers[i];
+	old_gripper2 = grippers[j];
+
+	new_gripper1.reset(new GripperKinematicObject());
+	btTransform avg_transform = getAverageTransform(old_gripper1, old_gripper2);
+	new_gripper1->setWorldTransform(avg_transform);
+	new_gripper1->attach_incremental(psb);
+
+	new_gripper2.reset(new GripperKinematicObject());
+	new_gripper2->setWorldTransform(getDownPoint(avg_transform.getOrigin(), psb));
+	new_gripper2->attach_incremental(psb);
+
+	if(old_gripper1->bAttached)
+	  old_gripper1->toggleattach();
+	new_gripper1->copy(old_gripper1);
+
+	if(old_gripper2->bAttached)
+	  old_gripper2->toggleattach();
+	new_gripper2->copy(old_gripper2);
+      }
+    }
+  }
+} 
+
+
+/** Returns the average of the transformations of the gripper G1 and G2. */
+btTransform CustomScene::getAverageTransform(GripperKinematicObject::Ptr &g1,
+					     GripperKinematicObject::Ptr &g2) {
+  btTransform t1 = g1->getWorldTransform();
+  btTransform t2 = g2->getWorldTransform();
+  btVector3 avg_translate = (t1.getOrigin() + t2.getOrigin())/2.0;
+  return btTransform(t1.getRotation(), avg_translate);
+}
+
+
+/** Returns true iff, the || g1 - g2|| <= _THRESH.
+    Where the distance is defined as: NORM of the location of origins
+    of the two grippers. */
+bool CustomScene::areClose(GripperKinematicObject::Ptr &g1,
+			   GripperKinematicObject::Ptr &g2, btScalar _thresh) {
+  btScalar dist = (g1->getWorldTransform().getOrigin()
+		   - g2->getWorldTransform().getOrigin()).length();
+  return (dist <= _thresh);
+}
+
+/** Returns the coordinates of the last point below (-z) SOURCE_PT
+    on the cloth represented by PSB. */
+btVector3 CustomScene::getDownPoint(btVector3 & source_pt, btSoftBody*psb,
+				    btScalar radius) {
+  int node_idx= -1;
+  int min_z = 9999;
+
+  for(int i = 0; i < psb->m_nodes.size(); i += 1) {
+    btScalar rad_dist = getXYDistance(source_pt, psb->m_nodes[i].m_x);
+    if (rad_dist < radius)
+      if (psb->m_nodes[i].m_x.z() < min_z) {
+	min_z = psb->m_nodes[i].m_x.z();
+	node_idx   = i;
+      }
+    }
+ return psb->m_nodes[node_idx].m_x;
+}
+
+
+/** Returns ||(v1.x, v1.y) - (v2.x, v2.y)||. */
+btScalar inline CustomScene::getXYDistance(btVector3 &v1, btVector3 &v2) {
+  btVector3 vec(v1.x() - v2.x(), v1.y() - v2.y(), 0.0);
+  return vec.length();
+}
+
+
 /** Saves the points in the scenep.lotPoints to a file in PCL format. */
 void CustomScene::savePoints(std::vector<btVector3> &points, btScalar scale,
 			     std::string _fname) {
@@ -288,7 +366,7 @@ void CustomScene::doJTracking() {
 }
 
 
-/** Simulates in a new fork.*/
+/** Simulates the scene in a new fork.*/
 void CustomScene::simulateInNewFork(StepState& innerstate, float sim_time,
 				    btTransform& left_gripper1_tm,
 				    btTransform& left_gripper2_tm) {
@@ -945,6 +1023,7 @@ void CustomScene::run() {
 
 
     left_gripper1_orig.reset(new GripperKinematicObject());
+
     left_gripper1_orig->setWorldTransform(btTransform(btQuaternion(0,0,0,1),
 						      btVector3(0,-10,0))); 
     env->add(left_gripper1_orig);
@@ -972,7 +1051,11 @@ void CustomScene::run() {
 						  btVector3(0,-20,0)));
     env->add(right_gripper2);
 
+    grippers.push_back(left_gripper1);
+    grippers.push_back(left_gripper2);
+    grippers.push_back(right_gripper1);
+    grippers.push_back(right_gripper2);
+
     num_auto_grippers = 2;      
     fork.reset();
 }
-
