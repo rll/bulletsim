@@ -1,6 +1,6 @@
 #include "config_tracking.h"
 
-std::string TrackingConfig::filteredCloudTopic = "/preprocessor/points";
+std::string TrackingConfig::filteredCloudTopic = "/kinect1/depth_registered/points";
 std::string TrackingConfig::depthTopic  = "/kinect1/depth_registered/image_rect";
 std::string TrackingConfig::rgbTopic = "/kinect1/rgb/image_rect_color";
 std::string TrackingConfig::fullCloudTopic = "/kinect1/rgb/points";

@@ -43,3 +43,6 @@ target_link_libraries(tracker_node tracking simulation clouds tf cv_bridge ${Ope
 
 add_executable(robot_tracker_node robot_tracker_node.cpp)
 target_link_libraries(robot_tracker_node tracking simulation clouds tf cv_bridge ${ROS_LIBRARIES} boost_signals)
+
+add_executable(towel_corners_node towel_corners.cpp)
+target_link_libraries(towel_corners_node tracking tf ${ROS_LIBRARIES})
