@@ -204,12 +204,12 @@ public:
       Where the distance is defined as: NORM of the location of origins
       of the two grippers. */
   bool areClose(GripperKinematicObject::Ptr &g1,
-		GripperKinematicObject::Ptr &g2, btScalar _thresh);
+		GripperKinematicObject::Ptr &g2, btScalar _thresh=0.005);
 
   /** Loops over all pairs of the 4 grippers, and merges teh grip into one,
       if they are close enough and holds the other end of the cloth.*/
-  void mergeGrippers(btSoftBody *psb, btScalar _close_thresh=0.005);
-
+  void mergeGrippers(boost::shared_ptr<btSoftBody> psb,
+		     btScalar _close_thresh=0.35);
 
   /** Returns the average of the transformations of the gripper G1 and G2. */
   btTransform getAverageTransform(GripperKinematicObject::Ptr &g1,
@@ -218,8 +218,8 @@ public:
   
   /** Returns the coordinates of the last point directly below (-z) SOURCE_PT
       on the cloth represented by PSB. */
-  btVector3 getDownPoint(btVector3 &source_pt, btSoftBody* psb,
-			 btScalar radius=0.02);
+  btVector3 getDownPoint(btVector3 &source_pt, boost::shared_ptr<btSoftBody> psb,
+			 btScalar radius=3.0);
 
   /** Returns ||(v1.x, v1.y) - (v2.x, v2.y)||. */
   btScalar inline getXYDistance(btVector3 &v1, btVector3 &v2);

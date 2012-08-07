@@ -2,32 +2,42 @@
 #include "CustomKeyHandler.h"
 
 
-void CustomScene::mergeGrippers(btSoftBody *psb, btScalar _close_thresh) {
+void CustomScene::mergeGrippers(boost::shared_ptr<btSoftBody> psb,
+				btScalar _close_thresh) {
+  cout<<"Called merge grippers."<<endl;
   for(int i = 0; i < grippers.size(); i += 1) {
     for(int j = i+1; j < grippers.size(); j+=1) {
-      if (areClose(grippers[i], grippers[j])) {
+      if (areClose(grippers[i], grippers[j], _close_thresh)) {
+	char ch;
+	cout<<"Merge? "<<i<<" & "<<j;
+	cin >> ch;
+	cout <<ch<<endl;
+	if (ch == 'y' || ch == 'Y') {
+	  GripperKinematicObject::Ptr new_gripper1, new_gripper2;
+	  GripperKinematicObject::Ptr old_gripper1(grippers[i]);
+	  GripperKinematicObject::Ptr old_gripper2(grippers[j]);
 
-	GripperKinematicObject::Ptr new_gripper1, old_gripper1,
-	  new_gripper2, old_gripper2;
-	old_gripper1 = grippers[i];
-	old_gripper2 = grippers[j];
+	  new_gripper1.reset(new GripperKinematicObject());
+		  
+	  btTransform avg_transform = getAverageTransform(old_gripper1, old_gripper2);
+	  new_gripper1->setWorldTransform(avg_transform);
+	  avg_transform = new_gripper1->getWorldTransform();
+	  
+	  new_gripper2.reset(new GripperKinematicObject());
+	  btTransform down_transform = btTransform(avg_transform.getRotation(),
+						   getDownPoint(avg_transform.getOrigin(), psb, 1.0));
+	  new_gripper2->setWorldTransform(down_transform);  
+	  
+	  old_gripper1->setWorldTransform(new_gripper1->getWorldTransform());
+	  old_gripper1->toggle();
+	  old_gripper1->attach_incremental(psb, 0);
 
-	new_gripper1.reset(new GripperKinematicObject());
-	btTransform avg_transform = getAverageTransform(old_gripper1, old_gripper2);
-	new_gripper1->setWorldTransform(avg_transform);
-	new_gripper1->attach_incremental(psb);
+	  old_gripper2->setWorldTransform(new_gripper2->getWorldTransform());
+	  old_gripper2->toggle();
+	  old_gripper2->attach_incremental(psb, 0);
 
-	new_gripper2.reset(new GripperKinematicObject());
-	new_gripper2->setWorldTransform(getDownPoint(avg_transform.getOrigin(), psb));
-	new_gripper2->attach_incremental(psb);
-
-	if(old_gripper1->bAttached)
-	  old_gripper1->toggleattach();
-	new_gripper1->copy(old_gripper1);
-
-	if(old_gripper2->bAttached)
-	  old_gripper2->toggleattach();
-	new_gripper2->copy(old_gripper2);
+						  
+	}
       }
     }
   }
@@ -39,7 +49,8 @@ btTransform CustomScene::getAverageTransform(GripperKinematicObject::Ptr &g1,
 					     GripperKinematicObject::Ptr &g2) {
   btTransform t1 = g1->getWorldTransform();
   btTransform t2 = g2->getWorldTransform();
-  btVector3 avg_translate = (t1.getOrigin() + t2.getOrigin())/2.0;
+  btVector3 avg_translate = t1.getOrigin() + t2.getOrigin();
+  avg_translate *= 0.5;
   return btTransform(t1.getRotation(), avg_translate);
 }
 
@@ -51,12 +62,13 @@ bool CustomScene::areClose(GripperKinematicObject::Ptr &g1,
 			   GripperKinematicObject::Ptr &g2, btScalar _thresh) {
   btScalar dist = (g1->getWorldTransform().getOrigin()
 		   - g2->getWorldTransform().getOrigin()).length();
+  cout<<"\tDist: "<<dist<<" thresh: "<<_thresh<<endl;
   return (dist <= _thresh);
 }
 
 /** Returns the coordinates of the last point below (-z) SOURCE_PT
     on the cloth represented by PSB. */
-btVector3 CustomScene::getDownPoint(btVector3 & source_pt, btSoftBody*psb,
+btVector3 CustomScene::getDownPoint(btVector3 & source_pt, boost::shared_ptr<btSoftBody> psb,
 				    btScalar radius) {
   int node_idx= -1;
   int min_z = 9999;

@@ -127,7 +127,18 @@ class GripperKinematicObject : public CompoundObject<BoxObject> {
 
 
   // Clears the list of the anchors attached to this gripper.
-  void releaseAllAnchors(btSoftBody * psb) {psb->m_anchors.clear();}
+  void releaseAllAnchors(btSoftBody * psb) {psb->m_anchors.clear();
+}
+
+  /** Closes the gripper, attaching to any nodes of PSB in way of closing. */
+  void attach_incremental(boost::shared_ptr<btSoftBody> psb, int i);
+
+
+  /** Searches around the gripper in a radius of RADIUS and attaches any
+      node of the softbody PSB found with the gripper.
+      Similar to RADIUS_SEARCH in toggleattach(). */
+  void attach_nearby_nodes(boost::shared_ptr<btSoftBody> psb,
+			   double radius=0.0);
 
 
   /* Returns a pointer to a copy this gripper.

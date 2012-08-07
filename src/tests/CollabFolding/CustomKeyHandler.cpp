@@ -50,6 +50,11 @@ bool CustomKeyHandler::handle(const osgGA::GUIEventAdapter &ea,
       scene.savePoints(points, (1.0/(GeneralConfig::scale*0.5)));
       break;
     }
+    case 'x': {
+      scene.mergeGrippers(scene.clothptr->softBody);
+      break;
+    }
+
 #ifdef USE_PR2
         case '9':
             scene.leftAction->reset();

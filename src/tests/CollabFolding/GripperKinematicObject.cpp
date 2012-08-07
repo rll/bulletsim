@@ -236,6 +236,7 @@ GripperKinematicObject::GripperKinematicObject(btVector4 color) {
   bAttached = false;
   closed_gap = 0.1;
   apperture = 2;
+  //state = GripperState_CLOSING;
   // The gripper jaws are 0.6x0.6x0.1 (lxbxh) cuboids.
   halfextents = btVector3(.3,.3,0.1);
 
@@ -322,53 +323,74 @@ void GripperKinematicObject::toggle() {
     bOpen = !bOpen;
 }
 
-/** Closes the gripper, attaching to any nodes of PSB in the way of closing. 
-void GripperKinematicObject::attach_incremental(btSoftBody* psb) {
-  if (bAttached)
-    toggleattach(psb);
 
-  if (state == GripperState_DONE) return;
+/** Searches around the gripper in a radius of RADIUS and attaches any
+    node of the softbody PSB found with the gripper. */
+void GripperKinematicObject::attach_nearby_nodes(boost::shared_ptr<btSoftBody> psb, double radius) {
+  if(radius <= 0)
+    radius = halfextents[0];
 
-  if(state == GripperState_OPENING && bAttached)
-    toggleattach(psb);
-    
+  btTransform top_tm;
+  children[0]->motionState->getWorldTransform(top_tm);
+  
+  btTransform bottom_tm;
+  children[1]->motionState->getWorldTransform(bottom_tm);
+  
+  int closest_body = -1;
+  for(int j = 0; j < psb->m_nodes.size(); j += 1) {
+    if((psb->m_nodes[j].m_x - cur_tm.getOrigin()).length() < radius) {
+      if( (psb->m_nodes[j].m_x - top_tm.getOrigin()).length() <
+	  (psb->m_nodes[j].m_x - bottom_tm.getOrigin()).length() )
+	closest_body = 0;
+      else
+	closest_body = 1;
+      
+      vattached_node_inds.push_back(j);
+      appendAnchor(psb.get(), &psb->m_nodes[j],
+		   children[closest_body]->rigidBody.get());
+    }
+  }
+}
+
+
+
+/** Closes the gripper, attaching to any nodes of PSB in the way of closing. */
+void GripperKinematicObject::attach_incremental(boost::shared_ptr<btSoftBody> psb, int i) {
+  if (i<50) {
+    if (bAttached) {
+      toggleattach(psb.get());
+      bAttached = !bAttached;
+      state = GripperState_CLOSING;
+    }
+
     btTransform top_tm;
     btTransform bottom_tm;
     children[0]->motionState->getWorldTransform(top_tm);
     children[1]->motionState->getWorldTransform(bottom_tm);
 
+    attach_nearby_nodes(psb);
+
     // The step length to move the jaws by in each call to this function.
-    const double STEP_SIZE = 0.005;
+    const double STEP_SIZE = 0.1;
 
-    if(state == GripperState_CLOSING) {
-      top_tm.setOrigin(top_tm.getOrigin()
-		       + STEP_SIZE * top_tm.getBasis().getColumn(2));
-      bottom_tm.setOrigin(bottom_tm.getOrigin()
-			  - STEP_SIZE * bottom_tm.getBasis().getColumn(2));
-    } else if(state == GripperState_OPENING) {
-      top_tm.setOrigin(top_tm.getOrigin()
-		       - STEP_SIZE * top_tm.getBasis().getColumn(2));
-      bottom_tm.setOrigin(bottom_tm.getOrigin()
-			  + STEP_SIZE * bottom_tm.getBasis().getColumn(2));
-    }
-
+    top_tm.setOrigin(top_tm.getOrigin()
+		     + STEP_SIZE * top_tm.getBasis().getColumn(2));
+    bottom_tm.setOrigin(bottom_tm.getOrigin()
+			- STEP_SIZE * bottom_tm.getBasis().getColumn(2));
+      
     children[0]->motionState->setKinematicPos(top_tm);
     children[1]->motionState->setKinematicPos(bottom_tm);
 
     double current_gap_length =
       (top_tm.getOrigin() - bottom_tm.getOrigin()).length();
 
-    if(state == GripperState_CLOSING
-       && current_gap_length <= (closed_gap + 2*halfextents[2])) {
+    if(current_gap_length <= (closed_gap + 2*halfextents[2])) {
       state = GripperState_DONE;
       bOpen = false;
-      if(!bAttached)
-	toggleattach(psb);
-    }
-
-    if(state == GripperState_OPENING && current_gap_length >= apperture) {
+      bAttached = true;
       state = GripperState_DONE;
-      bOpen = true;
+    } else {
+      attach_incremental(psb, ++i);
     }
+  }
 }
-*/
