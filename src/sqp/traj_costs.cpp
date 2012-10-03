@@ -126,22 +126,20 @@ JointCollInfo cartToJointCollInfo(const CartCollInfo& in, const Eigen::VectorXd&
     const LinkCollision& lc = in[iColl];
 //    out.jacs[iColl] = VectorXd::Zero(joints.size());
     out.dists[iColl] = lc.dist;
-#if 0
+/*
     for (int iJoint = 0; iJoint < chainDepthOfBodies[lc.linkInd]; ++iJoint) {
       const KinBody::JointPtr& joint = joints[iJoint];
       out.jacs[iColl](iJoint) += (lc.point - toBtVector(joint->GetAnchor())) .cross(toBtVector(joint->GetAxis())) .dot(lc.normal);
       out.dists[iColl] = lc.dist;
     }
-#endif
 
-#if 0
     for (int iJoint = 0; iJoint < joints.size(); ++iJoint) {
       if (robot->DoesAffect(dofInds[iJoint], lc.linkInd)) {
         const KinBody::JointPtr& joint = joints[iJoint];
         out.jacs[iColl](iJoint) = (lc.point - toBtVector(joint->GetAnchor())) .cross(toBtVector(joint->GetAxis())) .dot(lc.normal);
       }
     }
-#endif
+*/
 
 #if 1
     int nJoints = joints.size();

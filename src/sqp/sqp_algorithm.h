@@ -19,13 +19,13 @@ typedef Eigen::Matrix<bool,Eigen::Dynamic,1> VectorXb;
 
 ArmCCEPtr makeArmCCE(RaveRobotObject::Manipulator::Ptr arm, RaveRobotObject::Ptr robot, btDynamicsWorld*);
 BulletRaveSyncher syncherFromArm(RaveRobotObject::Manipulator::Ptr rrom);
-
+BulletRaveSyncher syncherFromRobot(RaveRobotObject::Ptr rro);
 
 class PlanningProblem { // fixed size optimization problem
 public:
   VarArray m_trajVars;
   Eigen::MatrixXd m_currentTraj;
-  VectorXb m_optMask;
+  VectorXb m_optMask;	// points in trajectory which can be optimized
   boost::shared_ptr<GRBModel> m_model;
   std::vector<TrajPlotterPtr> m_plotters;
   std::vector<ProblemComponentPtr> m_comps;

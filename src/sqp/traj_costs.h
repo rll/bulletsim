@@ -130,9 +130,10 @@ public:
   float calcCost(const Eigen::MatrixXd& x);
   void calcCostAndGrad(const Eigen::MatrixXd& traj, double& val, Eigen::MatrixXd& deriv);
   TrajJointCollInfo collectCollisionInfo(const Eigen::MatrixXd& traj);
-  
+
 };
 
 void countCollisions(const TrajJointCollInfo& trajCollInfo, double safeDistMinusPadding, int& nNear, int& nUnsafe, int& nColl);
+
 
 

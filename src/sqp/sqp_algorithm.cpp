@@ -5,6 +5,7 @@
 #include "simulation/simplescene.h"
 #include "utils/conversions.h"
 #include <typeinfo>
+#include <algorithm>
 #include "config_sqp.h"
 using namespace Eigen;
 using namespace std;
@@ -94,6 +95,32 @@ BulletRaveSyncher syncherFromArm(RaveRobotObject::Manipulator::Ptr rrom) {
   return BulletRaveSyncher(armLinks, armBodies);
 }
 
+/**
+ * Creates a BulletRaveSyncher for all links in a robot.
+ *
+ * This seems to make things quite slow.
+ */
+BulletRaveSyncher syncherFromRobot(RaveRobotObject::Ptr rro) {
+  std::vector<KinBody::LinkPtr> vlinks, linksWithBodies;
+  vlinks = rro->robot->GetLinks();
+  vector<btRigidBody*> bodies;
+
+  // I wish the below worked...
+//  vlinks.erase(std::remove_if(vlinks.begin(), vlinks.end(),
+//		  [rro](const KinBody::LinkPtr& link)
+//		  {
+//	  	  	  return !rro->associatedObj(link);
+//		  }), vlinks.end());
+  BOOST_FOREACH(KinBody::LinkPtr& link, vlinks){
+	  BulletObject::Ptr obj;
+	  obj = rro->associatedObj(link);
+	  if(!!obj){	// I guess not all links have associated rigid bodies
+		bodies.push_back(obj->rigidBody.get());
+		linksWithBodies.push_back(link);
+	  }
+  }
+  return BulletRaveSyncher(linksWithBodies, bodies);
+}
 
 PlanningProblem::PlanningProblem() :
     m_model(new GRBModel(*grbEnv)) {}
@@ -173,7 +200,7 @@ void CollisionCost::updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& object
   TrajJointCollInfo trajJointInfo = trajCartToJointCollInfo(trajCartInfo, traj, m_robot, m_dofInds);
 
 
-#if 0
+/*
   TrajJointCollInfo trajJointInfo = m_cce->collectCollisionInfo(traj);
   {
     ArmCCE::Ptr  cce = boost::dynamic_pointer_cast<ArmCCE>(m_cce);
@@ -196,7 +223,7 @@ void CollisionCost::updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& object
       }
     }
   }
-#endif
+*/
 
   plotCollisions(trajCartInfo, m_safeDistMinusPadding);
   printCollisionReport(trajJointInfo, m_safeDistMinusPadding);
@@ -242,7 +269,7 @@ void CollisionCost::onRemove() {
 
 
 
-#if 0
+/*
 void VelScaledCollisionCost::updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& objective) {
 
   removeVariablesAndConstraints();
@@ -338,7 +365,7 @@ void CollisionConstraint::relax() {
   m_cnts.data(), // constr
   cntPen.data());
 }
-#endif
+*/
 
 void LengthConstraintAndCost::onAdd() {
   MatrixXd& traj = m_problem->m_currentTraj;
@@ -508,7 +535,7 @@ void PlanningProblem::initialize(const Eigen::MatrixXd& initTraj, bool endFixed)
     if (m_optMask(iRow)) {
       for (int iCol = 0; iCol < m_currentTraj.cols(); ++iCol) {
         char namebuf[10];
-        sprintf(namebuf, "j_%i_%i",iRow,iCol);
+        snprintf(namebuf, 10, "j_%i_%i",iRow,iCol);	//TODO: use streams or something?
         m_trajVars.at(iRow, iCol) = m_model->addVar(0, 0, 0, GRB_CONTINUOUS,namebuf);
       }
     }
