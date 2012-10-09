@@ -83,7 +83,13 @@ MatrixXd discreteSecondDeriv(MatrixXd& in) {
 TrajCartCollInfo collectTrajCollisions(const Eigen::MatrixXd& traj, RobotBasePtr robot, BulletRaveSyncher& brs, btCollisionWorld* world, const std::vector<int>& dofInds) {
   ScopedRobotSave srs(robot);
   TrajCartCollInfo out(traj.rows());
-  robot->SetActiveDOFs(dofInds);
+  // Stupid hack follows, TODO: Generalize better
+  if(dofInds[0] == OpenRAVE::DOF_X){
+	  robot->SetActiveDOFs(vector<int>(), OpenRAVE::DOF_X | OpenRAVE::DOF_Y |OpenRAVE::DOF_RotationAxis);
+  }else{
+	  robot->SetActiveDOFs(dofInds);
+  }
+
   vector<int> linkInds;
   BOOST_FOREACH(KinBody::LinkPtr link, brs.m_links) linkInds.push_back(link->GetIndex());
   for (int iStep=0; iStep<traj.rows(); ++iStep) {
@@ -113,7 +119,13 @@ JointCollInfo cartToJointCollInfo(const CartCollInfo& in, const Eigen::VectorXd&
 
   ScopedRobotSave srs(robot);
 
-  robot->SetActiveDOFs(dofInds);
+  // Stupid hack follows, TODO: Generalize better
+  if(dofInds[0]== OpenRAVE::DOF_X){
+	  robot->SetActiveDOFs(vector<int>(), OpenRAVE::DOF_X | OpenRAVE::DOF_Y |OpenRAVE::DOF_RotationAxis);
+  }else{
+	  robot->SetActiveDOFs(dofInds);
+  }
+
   robot->SetActiveDOFValues(toDoubleVec(dofVals));
   vector<KinBody::JointPtr> joints;
   BOOST_FOREACH(int dofInd, dofInds) joints.push_back(robot->GetJointFromDOFIndex(dofInd));
@@ -121,7 +133,7 @@ JointCollInfo cartToJointCollInfo(const CartCollInfo& in, const Eigen::VectorXd&
   JointCollInfo out;
   out.dists.resize(in.size());
   out.jacs.resize(in.size());
-
+  cout << "Jacobian"<<endl;
   for (int iColl = 0; iColl < in.size(); ++iColl) {
     const LinkCollision& lc = in[iColl];
 //    out.jacs[iColl] = VectorXd::Zero(joints.size());
@@ -146,6 +158,11 @@ JointCollInfo cartToJointCollInfo(const CartCollInfo& in, const Eigen::VectorXd&
     std::vector<double> jacvec(3*nJoints);
     robot->CalculateActiveJacobian(lc.linkInd, toRaveVector(lc.point), jacvec);
     out.jacs[iColl] = - toVector3d(lc.normal).transpose() * Eigen::Map<MatrixXd>(jacvec.data(), 3, nJoints);
+    cout << "Link " <<lc.linkInd << "\t";
+    for(int i =0; i< out.jacs[iColl].size(); i++){
+    	cout << out.jacs[iColl](i) << "\t";
+    }
+    cout <<endl;
 //    cout << grad.transpose() << endl;
 //    cout << out.jacs[iColl].transpose() << endl;
 //    cout << (grad - out.jacs[iColl]).norm() << endl;

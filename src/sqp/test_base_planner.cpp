@@ -7,6 +7,7 @@
 #include "utils/logging.h"
 #include "utils/clock.h"
 #include "sqp_algorithm.h"
+#include "plotters.h"
 #include "config_sqp.h"
 #include "simulation/openravesupport.h"
 #include <osg/Depth>
@@ -69,7 +70,7 @@ const static double postures[][7] = {
 		{0, 0, 0, 0, 0, 0, 0}}; //4=outstretched
 const static double base_states[][3] = {
 		{0.0, 0.0, 0.0}, // 0=origin
-		{0.0, 4.0, 0.0}, //1=moved
+		{3, 0.0, 0.0}, //1=moved
 };
 
 void removeBodiesFromBullet(vector<BulletObject::Ptr> objs, btDynamicsWorld* world) {
@@ -100,16 +101,16 @@ int main(int argc, char *argv[]) {
 
 	Scene scene;
 	util::setGlobalEnv(scene.env);
-	//BoxObject::Ptr table(new BoxObject(0, GeneralConfig::scale * btVector3(.85, .65, table_thickness / 2), btTransform(btQuaternion(0, 0, 0, 1), GeneralConfig::scale * btVector3(1.1, 0, table_height - table_thickness / 2))));
-	//scene.env->add(table);
+	BoxObject::Ptr table(new BoxObject(0, GeneralConfig::scale * btVector3(.85, .65, table_thickness / 2), btTransform(btQuaternion(0, 0, 0, 1), GeneralConfig::scale * btVector3(1.1, 0, table_height - table_thickness / 2))));
+	scene.env->add(table);
 	PR2Manager pr2m(scene);
 	RaveRobotObject::Ptr pr2 = pr2m.pr2;
 	pr2->setColor(1,1,1,.4);
-	//table->setColor(0,0,0,.3);
+	table->setColor(0,0,0,.3);
 	//RaveRobotObject::Manipulator::Ptr rarm = pr2m.pr2Right;
 	removeBodiesFromBullet(pr2->children, scene.env->bullet->dynamicsWorld);
 	BOOST_FOREACH(BulletObjectPtr obj, pr2->children) if(obj) makeFullyTransparent(obj);
-	//makeFullyTransparent(table);
+	makeFullyTransparent(table);
 
 	BulletRaveSyncher brs = syncherFromRobot(pr2);
 
@@ -132,20 +133,23 @@ int main(int argc, char *argv[]) {
 	prob.initialize(initTraj, true);
     prob.addComponent(lcc);
     prob.addComponent(cc);
+    //prob.m_model->feasRelax(GRB_FEASRELAX_LINEAR, true, true, true);
+
+
     //prob.addComponent(jb);
 	LOG_INFO_FMT("setup time: %.2f", TOC());
 
+	cout << prob.m_currentTraj << endl;
+	TrajPlotterPtr plotter(new BasePlotter(pr2, &scene, brs, 1));
+//  if (LocalConfig::plotType == 0) {
+//	  //plotter.reset(new GripperPlotter(rarm, &scene, 1));
+//  }
+//  else if (LocalConfig::plotType == 1) {
+//	  //plotter.reset(new ArmPlotter(rarm, &scene, brs, SQPConfig::plotDecimation));
+//  }
+//  else throw std::runtime_error("invalid plot type");
 
-  TrajPlotterPtr plotter;
-  if (LocalConfig::plotType == 0) {
-	  //plotter.reset(new GripperPlotter(rarm, &scene, 1));
-  }
-  else if (LocalConfig::plotType == 1) {
-	  //plotter.reset(new ArmPlotter(rarm, &scene, brs, SQPConfig::plotDecimation));
-  }
-  else throw std::runtime_error("invalid plot type");
-
-  //prob.addPlotter(plotter);
+  prob.addPlotter(plotter);
 
 scene.startViewer();
   TIC1();
@@ -159,6 +163,7 @@ scene.startViewer();
 	}
 	long time = TOC();
 	cout << "Optimization time"<<time<<endl;
+	cout << prob.m_currentTraj << endl;
 	LOG_INFO_FMT("optimization time: %.2f", TOC());
 	  scene.idle(true);
 

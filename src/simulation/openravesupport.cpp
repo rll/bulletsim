@@ -424,12 +424,12 @@ bool RaveObject::detectCollisions() {
 	return false;
 }
 
-void RaveRobotObject::setDOFValues(const vector<int> &indices, const vector<
-		dReal> &vals) {
+void RaveRobotObject::setDOFValues(const vector<int> &indices, const vector<dReal> &vals,
+		int nAffineDOFBitmask) {
 	// update openrave structure
 	{
 		EnvironmentMutex::scoped_lock lock(rave->env->GetMutex());
-		robot->SetActiveDOFs(indices);
+		robot->SetActiveDOFs(indices, nAffineDOFBitmask);
 		robot->SetActiveDOFValues(vals);
 		rave->env->UpdatePublishedBodies();
 	}

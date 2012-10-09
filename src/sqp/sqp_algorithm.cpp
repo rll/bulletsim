@@ -6,6 +6,7 @@
 #include "utils/conversions.h"
 #include <typeinfo>
 #include <algorithm>
+#include <sstream>
 #include "config_sqp.h"
 using namespace Eigen;
 using namespace std;
@@ -85,7 +86,6 @@ ArmCCEPtr makeArmCCE(RaveRobotObject::Manipulator::Ptr rrom, RaveRobotObject::Pt
   return ArmCCEPtr(new ArmCCE(rro->robot, world, armLinks, armBodies, armJoints, chainDepthOfBodies));
 }
 
-
 BulletRaveSyncher syncherFromArm(RaveRobotObject::Manipulator::Ptr rrom) {
   vector<KinBody::LinkPtr> armLinks = getArmLinks(rrom->manip);
   vector<btRigidBody*> armBodies;
@@ -121,6 +121,31 @@ BulletRaveSyncher syncherFromRobot(RaveRobotObject::Ptr rro) {
   }
   return BulletRaveSyncher(linksWithBodies, bodies);
 }
+
+BulletRaveSyncher syncherFromRobotBody(RaveRobotObject::Ptr rro) {
+  std::vector<KinBody::LinkPtr> vlinks, linksWithBodies;
+  vlinks.push_back(rro->robot->GetLink("torso_lift_link"));
+  vlinks.push_back(rro->robot->GetLink("base_link"));
+  vlinks.push_back(rro->robot->GetLink("base_footprint"));
+  vector<btRigidBody*> bodies;
+
+  // I wish the below worked...
+//  vlinks.erase(std::remove_if(vlinks.begin(), vlinks.end(),
+//		  [rro](const KinBody::LinkPtr& link)
+//		  {
+//	  	  	  return !rro->associatedObj(link);
+//		  }), vlinks.end());
+  BOOST_FOREACH(KinBody::LinkPtr& link, vlinks){
+	  BulletObject::Ptr obj;
+	  obj = rro->associatedObj(link);
+	  if(!!obj){	// I guess not all links have associated rigid bodies
+		bodies.push_back(obj->rigidBody.get());
+		linksWithBodies.push_back(link);
+	  }
+  }
+  return BulletRaveSyncher(linksWithBodies, bodies);
+}
+
 
 PlanningProblem::PlanningProblem() :
     m_model(new GRBModel(*grbEnv)) {}
@@ -195,10 +220,8 @@ void CollisionCost::updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& object
   removeVariablesAndConstraints();
   // Actually run through trajectory and find collisions
 
-
   TrajCartCollInfo trajCartInfo = collectTrajCollisions(traj, m_robot, m_brs, m_world, m_dofInds);
   TrajJointCollInfo trajJointInfo = trajCartToJointCollInfo(trajCartInfo, traj, m_robot, m_dofInds);
-
 
 /*
   TrajJointCollInfo trajJointInfo = m_cce->collectCollisionInfo(traj);
@@ -380,8 +403,11 @@ void LengthConstraintAndCost::onAdd() {
         diff -= m_problem->m_trajVars.at(iStep - 1, iJoint);
         assert(isValidVar(m_problem->m_trajVars.at(iStep-1,iJoint)));
       } else diff -= traj(iStep-1, iJoint);
-      m_cnts.push_back(m_problem->m_model->addConstr(diff <= m_maxStepMvmt(iJoint)));
-      m_cnts.push_back(m_problem->m_model->addConstr(diff >= -m_maxStepMvmt(iJoint)));
+      char name[20];
+      snprintf(name, 20, "diff<%1.1f_s%d_j_%d", m_maxStepMvmt(iJoint), iStep, iJoint);
+      m_cnts.push_back(m_problem->m_model->addConstr(diff <= m_maxStepMvmt(iJoint), name));
+      snprintf(name, 20, "diff>-%1.1f_s%d_j_%d", m_maxStepMvmt(iJoint), iStep, iJoint);
+      m_cnts.push_back(m_problem->m_model->addConstr(diff >= -m_maxStepMvmt(iJoint), name));
       m_obj += traj.rows() * (diff * diff);
     }
 }
@@ -506,6 +532,13 @@ void PlanningProblem::doIteration() {
   int status = m_model->get(GRB_IntAttr_Status);
   if (status != GRB_OPTIMAL) {
     LOG_ERROR("bad grb status: " << grb_statuses[status]);
+    try{
+		m_model->computeIIS();
+		m_model->write("infeasible.ilp");
+	}catch(GRBException e){
+		LOG_ERROR("Exception occurred");
+		LOG_ERROR(e.getMessage());
+	}
     m_approxObjAfterOpt.push_back(m_trueObjBeforeOpt.back());
   }
   else {
@@ -519,6 +552,9 @@ void PlanningProblem::doIteration() {
 void PlanningProblem::optimize(int maxIter) {
   BOOST_FOREACH(TrajPlotterPtr plotter, m_plotters) plotter->plotTraj(m_currentTraj);
   for (int iter = 0; iter < maxIter; ++iter) {
+	std::stringstream filename;
+	filename << "iteration" << iter << ".lp";
+    m_model->write(filename.str());
     doIteration();
     BOOST_FOREACH(TrajPlotterPtr plotter, m_plotters) plotter->plotTraj(m_currentTraj);
     LOG_INFO_FMT("iteration: %i",iter);
@@ -536,170 +572,10 @@ void PlanningProblem::initialize(const Eigen::MatrixXd& initTraj, bool endFixed)
       for (int iCol = 0; iCol < m_currentTraj.cols(); ++iCol) {
         char namebuf[10];
         snprintf(namebuf, 10, "j_%i_%i",iRow,iCol);	//TODO: use streams or something?
-        m_trajVars.at(iRow, iCol) = m_model->addVar(0, 0, 0, GRB_CONTINUOUS,namebuf);
+        m_trajVars.at(iRow, iCol) = m_model->addVar(0, 10000, 0, GRB_CONTINUOUS,namebuf);
       }
     }
   }
   m_model->update();
   m_initialized=true;
 }
-
-
-GripperPlotter::GripperPlotter(RaveRobotObject::Manipulator::Ptr rrom, Scene* scene, int decimation) :
-  m_scene(scene), m_osgRoot(scene->env->osg->root.get()), m_rrom(rrom), m_decimation(decimation), m_curve(new PlotCurve(3)) {
-  m_osgRoot->addChild(m_curve.get());
-}
-
-void GripperPlotter::setNumGrippers(int n) {
-  if (n != m_grippers.size()) {
-    clear();
-    m_grippers.resize(n);
-    for (int i = 0; i < n; ++i) {
-      FakeGripper::Ptr fakeGripper(new FakeGripper(m_rrom));
-      m_grippers[i] = fakeGripper;
-      m_osgRoot->addChild(fakeGripper->m_node);
-    }
-  }
-}
-
-void GripperPlotter::clear() {
-
-  for (int i = 0; i < m_grippers.size(); ++i) {
-    m_osgRoot->removeChild(m_grippers[i]->m_node);
-  }
-  m_grippers.clear();
-}
-
-void GripperPlotter::plotTraj(const MatrixXd& traj) {
-  setNumGrippers(traj.rows() / m_decimation);
-  vector<btTransform> transforms(m_grippers.size());
-  vector<btVector3> origins(m_grippers.size());
-
-  vector<double> curDOFVals = m_rrom->getDOFValues();
-  for (int iPlot = 0; iPlot < m_grippers.size(); ++iPlot) {
-    m_rrom->setDOFValues(toDoubleVec(traj.row(iPlot * m_decimation)));
-    transforms[iPlot] = m_rrom->getTransform();
-    origins[iPlot] = transforms[iPlot].getOrigin();
-  }
-  m_rrom->setDOFValues(curDOFVals);
-
-  m_curve->setPoints(origins);
-  for (int iPlot = 0; iPlot < m_grippers.size(); ++iPlot)
-    m_grippers[iPlot]->setTransform(transforms[iPlot]);
-  m_scene->step(0);
-}
-
-GripperPlotter::~GripperPlotter() {
-  clear();
-  m_osgRoot->removeChild(m_curve);
-}
-
-ArmPlotter::ArmPlotter(RaveRobotObject::Manipulator::Ptr rrom, Scene* scene, BulletRaveSyncher& syncher, int decimation) {
-  vector<BulletObject::Ptr> armObjs;
-  BOOST_FOREACH(KinBody::LinkPtr link, syncher.m_links) armObjs.push_back(rrom->robot->associatedObj(link));
-  init(rrom, armObjs, scene, &syncher, decimation);
-}
-ArmPlotter::ArmPlotter(RaveRobotObject::Manipulator::Ptr rrom, const std::vector<BulletObject::Ptr>& origs, Scene* scene, BulletRaveSyncher*syncher, int decimation) {
-  init(rrom, origs, scene, syncher, decimation);
-}
-
-void ArmPlotter::init(RaveRobotObject::Manipulator::Ptr rrom, const std::vector<BulletObject::Ptr>& origs, Scene* scene, BulletRaveSyncher* syncher, int decimation) {
-  m_rrom = rrom;
-  m_scene = scene;
-  m_osgRoot = scene->env->osg->root.get();
-  m_origs = origs;
-  m_syncher = syncher;
-  m_decimation = decimation;
-  m_curve = new PlotCurve(3);
-  m_curve->m_defaultColor=osg::Vec4f(0,1,0,1);
-  m_axes.reset(new PlotAxes());
-  m_curve->m_defaultColor=osg::Vec4f(0,1,0,1);
-  m_scene->env->add(m_axes);
-  m_osgRoot->addChild(m_curve.get());
-}
-
-ArmPlotter::~ArmPlotter() {
-  m_osgRoot->removeChild(m_curve);
-  m_scene->env->remove(m_axes);
-}
-
-void ArmPlotter::setLength(int nPlots) {
-  if (m_fakes.m_nRow == nPlots) return;
-  m_fakes.resize(nPlots, m_origs.size());
-  for (int iPlot = 0; iPlot < nPlots; ++iPlot) {
-    for (int iObj = 0; iObj < m_origs.size(); ++iObj) {
-      FakeObjectCopy::Ptr& fake = m_fakes.at(iPlot, iObj);
-      fake.reset(new FakeObjectCopy(m_origs[iObj]));
-      fake->makeChildOf(m_osgRoot);
-      float frac = (float) iPlot / nPlots;
-      fake->setColor(osg::Vec4f(frac, 0, 1 - frac, .35));
-    }
-  }
-}
-
-vector<btVector3> getGripperPositions(const MatrixXd& traj, RaveRobotObject::Manipulator::Ptr rrom) {
-  vector<double> dofOrig = rrom->getDOFValues();
-  vector<btVector3> out;
-  for (int i=0; i < traj.rows(); ++i) {
-    rrom->setDOFValues(toDoubleVec(traj.row(i)));
-    out.push_back(rrom->getTransform().getOrigin());
-  }
-  rrom->setDOFValues(dofOrig);
-  return out;
-}
-
-vector<btTransform> getGripperPoses(const MatrixXd& traj, RaveRobotObject::Manipulator::Ptr rrom) {
-  vector<double> dofOrig = rrom->getDOFValues();
-  vector<btTransform> out;
-  for (int i=0; i < traj.rows(); ++i) {
-    rrom->setDOFValues(toDoubleVec(traj.row(i)));
-    out.push_back(rrom->getTransform());
-  }  
-  rrom->setDOFValues(dofOrig);
-  return out;
-}
-
-void ArmPlotter::plotTraj(const MatrixXd& traj) {
-  setLength(traj.rows() / m_decimation);
-
-  vector<double> curDOFVals = m_rrom->getDOFValues();
-  for (int iPlot = 0; iPlot < m_fakes.m_nRow; ++iPlot) {
-    m_rrom->setDOFValues(toDoubleVec(traj.row(iPlot * m_decimation)));
-    m_syncher->updateBullet();
-    for (int iObj = 0; iObj < m_origs.size(); ++iObj) {
-      m_fakes.at(iPlot, iObj)->setTransform(m_origs[iObj]->rigidBody->getCenterOfMassTransform());
-    }
-  }
-
-  m_rrom->setDOFValues(toDoubleVec(traj.row(traj.rows()-1)));
-  m_axes->setup(m_rrom->getTransform(), .1*METERS);
-
-  vector<btVector3> gripperPositions = getGripperPositions(traj, m_rrom);
-  m_curve->setPoints(gripperPositions);
-
-
-  m_rrom->setDOFValues(curDOFVals);
-  m_syncher->updateBullet();
-
-
-  TIC();
-  m_scene->step(0);
-  LOG_INFO_FMT("draw time: %.3f", TOC());
-}
-
-void interactiveTrajPlot(const MatrixXd& traj, RaveRobotObject::Manipulator::Ptr arm, BulletRaveSyncher* syncher, Scene* scene) {
-
-  vector<double> curDOFVals = arm->getDOFValues();
-  for (int iStep=0; iStep < traj.rows(); ++iStep) {
-    arm->setDOFValues(toDoubleVec(traj.row(iStep)));
-    syncher->updateBullet();
-    printf("press p to continue\n");
-    scene->step(0);
-    scene->idle(true);
-  }
-  arm->setDOFValues(curDOFVals);
-  syncher->updateBullet();
-}
-
-
-

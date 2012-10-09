@@ -115,7 +115,7 @@ public:
 
   EnvironmentObject::Ptr copy(Fork &f) const;
 
-  void setDOFValues(const vector<int> &indices, const vector<dReal> &vals);
+  void setDOFValues(const vector<int> &indices, const vector<dReal> &vals, int nAffineDOFBitmask=OpenRAVE::DOF_NoTransform);
   vector<double> getDOFValues(const vector<int> &indices);
   vector<double> getDOFValues();
 

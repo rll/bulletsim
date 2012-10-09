@@ -6,8 +6,7 @@
 #include "simulation/plotting.h"
 #include "gurobi_c++.h"
 #include "sqp_fwd.h"
-
-
+#include "plotters.h"
 
 GRBEnv* getGRBEnv();
 
@@ -20,6 +19,7 @@ typedef Eigen::Matrix<bool,Eigen::Dynamic,1> VectorXb;
 ArmCCEPtr makeArmCCE(RaveRobotObject::Manipulator::Ptr arm, RaveRobotObject::Ptr robot, btDynamicsWorld*);
 BulletRaveSyncher syncherFromArm(RaveRobotObject::Manipulator::Ptr rrom);
 BulletRaveSyncher syncherFromRobot(RaveRobotObject::Ptr rro);
+BulletRaveSyncher syncherFromRobotBody(RaveRobotObject::Ptr rro);
 
 class PlanningProblem { // fixed size optimization problem
 public:
@@ -71,7 +71,6 @@ protected:
   std::vector<GRBVar> m_vars;
   std::vector<GRBConstr> m_cnts;
   GRBLinExpr m_obj;
-
   OpenRAVE::RobotBasePtr m_robot;
   btDynamicsWorld* m_world;
   BulletRaveSyncher& m_brs;
@@ -133,7 +132,6 @@ public:
     m_startFixed(startFixed), m_endFixed(endFixed), m_maxStepMvmt(maxStepMvmt), m_coeff(coeff) {
       m_attrs |= HAS_CONSTRAINT + HAS_COST;
     }
-
   void onAdd();
   void updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& objective) { objective += m_coeff*m_obj;}
   double calcApproxObjective() { return m_obj.getValue(); }
@@ -199,53 +197,4 @@ Eigen::MatrixXd makeTraj(const Eigen::VectorXd& startJoints, const Eigen::Vector
 Eigen::MatrixXd makeTraj(RaveRobotObject::Manipulator::Ptr manip, const Eigen::VectorXd& startJoints, const btTransform endTransform, int nSteps);
 Eigen::MatrixXd makeTraj(RaveRobotObject::Manipulator::Ptr manip, const std::vector<btTransform>& transforms);
 void updateTraj(const VarArray& trajVars, const VectorXb& optmask, Eigen::MatrixXd& traj);
-
-
-class TrajPlotter {
-public:
-  typedef boost::shared_ptr<TrajPlotter> Ptr;
-  virtual void plotTraj(const Eigen::MatrixXd& traj) = 0;
-  virtual void clear() {}
-};
-
-class GripperPlotter : public TrajPlotter {
-public:
-  std::vector<FakeGripper::Ptr> m_grippers;
-  PlotCurve::Ptr m_curve;
-  RaveRobotObject::Manipulator::Ptr m_rrom;
-  Scene* m_scene;
-  osg::Group* m_osgRoot;
-  int m_decimation;
-  void plotTraj(const Eigen::MatrixXd& traj);
-  void clear();
-  GripperPlotter(RaveRobotObject::Manipulator::Ptr, Scene*, int decimation=1);
-  ~GripperPlotter();
-  void setNumGrippers(int n);
-};
-
-class ArmPlotter : public TrajPlotter {
-public:
-  typedef boost::shared_ptr<ArmPlotter> Ptr;
-  RaveRobotObject::Manipulator::Ptr m_rrom;
-  std::vector<BulletObject::Ptr> m_origs;
-  BasicArray<FakeObjectCopy::Ptr> m_fakes;
-  PlotCurve::Ptr m_curve;
-  PlotAxes::Ptr m_axes;
-  Scene* m_scene;
-  osg::Group* m_osgRoot;
-  int m_decimation;
-  BulletRaveSyncher* m_syncher;
-  void plotTraj(const Eigen::MatrixXd& traj);
-  ArmPlotter(RaveRobotObject::Manipulator::Ptr rrom, Scene* scene, BulletRaveSyncher& syncher, int decimation=1);
-  ArmPlotter(RaveRobotObject::Manipulator::Ptr rrom, const std::vector<BulletObject::Ptr>& origs, Scene* scene, BulletRaveSyncher*syncher, int decimation);
-  void init(RaveRobotObject::Manipulator::Ptr, const std::vector<BulletObject::Ptr>&, Scene*, BulletRaveSyncher*, int decimation);
-  void setLength(int n);
-  void clear() {setLength(0);}
-  ~ArmPlotter();
-};
-
-void interactiveTrajPlot(const Eigen::MatrixXd& traj, RaveRobotObject::Manipulator::Ptr arm, BulletRaveSyncher* syncher, Scene* scene);
-
-
-
 

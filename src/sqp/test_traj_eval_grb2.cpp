@@ -7,8 +7,10 @@
 #include "utils/logging.h"
 #include "utils/clock.h"
 #include "sqp_algorithm.h"
+#include "plotters.h"
 #include "config_sqp.h"
 #include <osg/Depth>
+
 using namespace std;
 using namespace Eigen;
 using namespace util;
