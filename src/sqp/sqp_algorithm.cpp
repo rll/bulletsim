@@ -553,7 +553,7 @@ void PlanningProblem::optimize(int maxIter) {
   BOOST_FOREACH(TrajPlotterPtr plotter, m_plotters) plotter->plotTraj(m_currentTraj);
   for (int iter = 0; iter < maxIter; ++iter) {
 	std::stringstream filename;
-	filename << "iteration" << iter << ".lp";
+	filename << "tmp/iteration" << iter << ".lp";
     m_model->write(filename.str());
     doIteration();
     BOOST_FOREACH(TrajPlotterPtr plotter, m_plotters) plotter->plotTraj(m_currentTraj);

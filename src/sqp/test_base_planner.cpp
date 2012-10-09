@@ -68,9 +68,9 @@ const static double postures[][7] = {
 		{-0.33, -0.35,  -2.59, -0.15,  -0.59, -1.41, 0.27}, //2=up
 		{-1.832,  -0.332,   -1.011,  -1.437,   -1.1  ,  -2.106,  3.074}, //3=side
 		{0, 0, 0, 0, 0, 0, 0}}; //4=outstretched
-const static double base_states[][2] = {
-		{0.0, 0.0}, // 0=origin
-		{3, 0.0}, //1=moved
+const static double base_states[][3] = {
+		{0.0, 0.0, 0.0}, // 0=origin
+		{3, 0.0, 0.0}, //1=moved
 };
 
 void removeBodiesFromBullet(vector<BulletObject::Ptr> objs, btDynamicsWorld* world) {
@@ -101,7 +101,8 @@ int main(int argc, char *argv[]) {
 
 	Scene scene;
 	util::setGlobalEnv(scene.env);
-	BoxObject::Ptr table(new BoxObject(0, GeneralConfig::scale * btVector3(.85, .65, table_thickness / 2), btTransform(btQuaternion(0, 0, 0, 1), GeneralConfig::scale * btVector3(1.1, 0, table_height - table_thickness / 2))));
+	BoxObject::Ptr table(new BoxObject(0, GeneralConfig::scale * btVector3(.85, .65, table_thickness / 2),
+			btTransform(btQuaternion(0, 0, 0.001, 1).normalized(), GeneralConfig::scale * btVector3(1.1, .1, table_height - table_thickness / 2))));
 	scene.env->add(table);
 	PR2Manager pr2m(scene);
 	RaveRobotObject::Ptr pr2 = pr2m.pr2;
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
 
 	BulletRaveSyncher brs = syncherFromRobotBody(pr2);
 
-	int nJoints = 2;
+	int nJoints = 3;
     VectorXd startJoints = Map<const VectorXd>(base_states[0], nJoints);
     VectorXd endJoints = Map<const VectorXd>(base_states[1], nJoints);
 
@@ -124,6 +125,7 @@ int main(int argc, char *argv[]) {
 	std::vector<int> dofInds;
 	dofInds.push_back(OpenRAVE::DOF_X);
 	dofInds.push_back(OpenRAVE::DOF_Y);
+	dofInds.push_back(OpenRAVE::DOF_RotationAxis);
 	CollisionCostPtr cc(new CollisionCost(pr2->robot, scene.env->bullet->dynamicsWorld, brs, dofInds, -BulletConfig::linkPadding/2, SQPConfig::collCoef));
 
 
@@ -138,7 +140,7 @@ int main(int argc, char *argv[]) {
 	LOG_INFO_FMT("setup time: %.2f", TOC());
 
 	cout << prob.m_currentTraj << endl;
-	TrajPlotterPtr plotter(new BasePlotter(pr2, &scene, brs, 1));
+	TrajPlotterPtr plotter(new BasePlotter(pr2, &scene, brs, SQPConfig::plotDecimation));
 //  if (LocalConfig::plotType == 0) {
 //	  //plotter.reset(new GripperPlotter(rarm, &scene, 1));
 //  }
