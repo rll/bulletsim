@@ -80,15 +80,32 @@ MatrixXd discreteSecondDeriv(MatrixXd& in) {
 }
 #endif
 
+bool isAffineDOF(int dofIndex){
+	return (dofIndex == OpenRAVE::DOF_X || dofIndex == OpenRAVE::DOF_Y ||
+			dofIndex == OpenRAVE::DOF_Z || dofIndex == OpenRAVE::DOF_RotationAxis ||
+			dofIndex == OpenRAVE::DOF_Rotation3D || dofIndex == OpenRAVE::DOF_RotationQuat);
+}
+
+int extractAffineDOFs(vector<int> dofIndices, vector<int>& out){
+	int mask;
+	out.clear();
+	for(vector<int>::iterator iter = dofIndices.begin(); iter != dofIndices.end(); iter++){
+		if(isAffineDOF(*iter)){
+			mask |= *iter;
+		}else{
+			out.push_back(*iter);
+		}
+	}
+	return mask;
+}
+
 TrajCartCollInfo collectTrajCollisions(const Eigen::MatrixXd& traj, RobotBasePtr robot, BulletRaveSyncher& brs, btCollisionWorld* world, const std::vector<int>& dofInds) {
   ScopedRobotSave srs(robot);
   TrajCartCollInfo out(traj.rows());
-  // Stupid hack follows, TODO: Generalize better
-  if(dofInds[0] == OpenRAVE::DOF_X){
-	  robot->SetActiveDOFs(vector<int>(), OpenRAVE::DOF_X | OpenRAVE::DOF_Y |OpenRAVE::DOF_RotationAxis);
-  }else{
-	  robot->SetActiveDOFs(dofInds);
-  }
+  // Mildly stupid hack follows, TODO: Generalize better
+  vector<int> nonAffineDOFs;
+  int affineMask = extractAffineDOFs(dofInds, nonAffineDOFs);
+  robot->SetActiveDOFs(nonAffineDOFs, affineMask);
 
   vector<int> linkInds;
   BOOST_FOREACH(KinBody::LinkPtr link, brs.m_links) linkInds.push_back(link->GetIndex());
@@ -118,13 +135,10 @@ JointCollInfo cartToJointCollInfo(const CartCollInfo& in, const Eigen::VectorXd&
     const std::vector<int>& dofInds) {
 
   ScopedRobotSave srs(robot);
-
-  // Stupid hack follows, TODO: Generalize better
-  if(dofInds[0]== OpenRAVE::DOF_X){
-	  robot->SetActiveDOFs(vector<int>(), OpenRAVE::DOF_X | OpenRAVE::DOF_Y |OpenRAVE::DOF_RotationAxis);
-  }else{
-	  robot->SetActiveDOFs(dofInds);
-  }
+  vector<int> nonAffineDOFs;
+  // Mildly stupid hack follows, TODO: Generalize better
+  int affineMask = extractAffineDOFs(dofInds, nonAffineDOFs);
+  robot->SetActiveDOFs(nonAffineDOFs, affineMask);
 
   robot->SetActiveDOFValues(toDoubleVec(dofVals));
   vector<KinBody::JointPtr> joints;

@@ -68,9 +68,9 @@ const static double postures[][7] = {
 		{-0.33, -0.35,  -2.59, -0.15,  -0.59, -1.41, 0.27}, //2=up
 		{-1.832,  -0.332,   -1.011,  -1.437,   -1.1  ,  -2.106,  3.074}, //3=side
 		{0, 0, 0, 0, 0, 0, 0}}; //4=outstretched
-const static double base_states[][3] = {
-		{0.0, 0.0, 0.0}, // 0=origin
-		{3, 0.0, 0.0}, //1=moved
+const static double base_states[][2] = {
+		{0.0, 0.0}, // 0=origin
+		{3, 0.0}, //1=moved
 };
 
 void removeBodiesFromBullet(vector<BulletObject::Ptr> objs, btDynamicsWorld* world) {
@@ -107,14 +107,13 @@ int main(int argc, char *argv[]) {
 	RaveRobotObject::Ptr pr2 = pr2m.pr2;
 	pr2->setColor(1,1,1,.4);
 	table->setColor(0,0,0,.3);
-	//RaveRobotObject::Manipulator::Ptr rarm = pr2m.pr2Right;
 	removeBodiesFromBullet(pr2->children, scene.env->bullet->dynamicsWorld);
 	BOOST_FOREACH(BulletObjectPtr obj, pr2->children) if(obj) makeFullyTransparent(obj);
 	makeFullyTransparent(table);
 
-	BulletRaveSyncher brs = syncherFromRobot(pr2);
+	BulletRaveSyncher brs = syncherFromRobotBody(pr2);
 
-	int nJoints = 3;
+	int nJoints = 2;
     VectorXd startJoints = Map<const VectorXd>(base_states[0], nJoints);
     VectorXd endJoints = Map<const VectorXd>(base_states[1], nJoints);
 
@@ -125,7 +124,6 @@ int main(int argc, char *argv[]) {
 	std::vector<int> dofInds;
 	dofInds.push_back(OpenRAVE::DOF_X);
 	dofInds.push_back(OpenRAVE::DOF_Y);
-	dofInds.push_back(OpenRAVE::DOF_RotationAxis);
 	CollisionCostPtr cc(new CollisionCost(pr2->robot, scene.env->bullet->dynamicsWorld, brs, dofInds, -BulletConfig::linkPadding/2, SQPConfig::collCoef));
 
 
