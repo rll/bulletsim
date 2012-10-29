@@ -111,6 +111,16 @@ RaveRobotObject::Ptr getRobotByName(Environment::Ptr env, RaveInstance::Ptr rave
   return boost::dynamic_pointer_cast<RaveRobotObject>(getObjectByName(env, rave, name));
 }
 
+RaveRobotObject::Ptr getFirstRobot(Environment::Ptr env, RaveInstance::Ptr rave) {
+  RaveRobotObject::Ptr maybeRO;
+  BOOST_FOREACH(EnvironmentObject::Ptr obj, env->objects) {
+    maybeRO = boost::dynamic_pointer_cast<RaveRobotObject>(obj);
+    if (maybeRO) return maybeRO;
+  }
+  LOG_ERROR("No robots found!");
+  return maybeRO;
+}
+
 RaveObject::RaveObject(RaveInstance::Ptr rave_, KinBodyPtr body_, TrimeshMode trimeshMode, bool isDynamic) {
 	initRaveObject(rave_, body_, trimeshMode, isDynamic);
 }

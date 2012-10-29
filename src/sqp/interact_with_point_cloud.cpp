@@ -49,14 +49,14 @@ int main(int argc, char* argv[]) {
       scene.env->add(collisionBoxes);
       Load(scene.env, scene.rave, "robots/pr2-beta-static.zae");
     }
-    else
+    else{
       Load(scene.env, scene.rave, "robots/pr2-beta-static.zae");
+    }
 
-
-    RaveRobotObjectPtr  pr2 = getRobotByName(scene.env, scene.rave, "pr2");
-    if (!pr2) pr2 = getRobotByName(scene.env, scene.rave, "PR2");
-    if (!pr2) pr2 = getRobotByName(scene.env, scene.rave, "BarrettWAM");
-    assert (pr2);
+    RaveRobotObjectPtr  robot = getRobotByName(scene.env, scene.rave, "pr2");
+    if (!robot) robot = getRobotByName(scene.env, scene.rave, "PR2");
+    if (!robot) robot = getFirstRobot(scene.env, scene.rave);
+    assert (robot);
 
     RobotManager pr2m(scene);
     assert (pr2m.botRight);

@@ -213,6 +213,7 @@ protected:
 std::vector<RaveRobotObject::Ptr> getRobots(Environment::Ptr env, RaveInstance::Ptr rave);
 RaveObject::Ptr getObjectByName(Environment::Ptr env, RaveInstance::Ptr rave, const string& name);
 RaveRobotObject::Ptr getRobotByName(Environment::Ptr env, RaveInstance::Ptr rave, const string& name);
+RaveRobotObject::Ptr getFirstRobot(Environment::Ptr env, RaveInstance::Ptr rave);
 
 class ScopedRobotSave {
   std::vector<double> m_dofvals;
