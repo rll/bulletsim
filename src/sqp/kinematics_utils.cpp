@@ -101,7 +101,7 @@ void ArmPrinter::printAll() {
 }
 
 void ArmPrinter::printJoints() {
-  cout << "cart left: " << commaSep(m_left->getDOFValues()) << " right: " << commaSep(m_right->getDOFValues())
+  cout << "joints left: " << commaSep(m_left->getDOFValues()) << " right: " << commaSep(m_right->getDOFValues())
       << endl;
 }
 void ArmPrinter::printCarts() {
