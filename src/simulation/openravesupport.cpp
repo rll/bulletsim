@@ -95,6 +95,7 @@ RaveObject::Ptr getObjectByName(Environment::Ptr env, RaveInstance::Ptr rave, co
       return maybeRO;
     }
   }
+  LOG_ERROR_FMT("Could not find object %s", name.c_str());
   return RaveObject::Ptr();
 }
 
@@ -626,7 +627,9 @@ RaveRobotObject::Manipulator::Ptr RaveRobotObject::getManipByName(const std::str
 
 RaveRobotObject::Manipulator::Ptr RaveRobotObject::createManipulator(
 		const std::string &manipName, bool useFakeGrabber) {
-	if (getManipByName(manipName)) return getManipByName(manipName);
+  if (getManipByName(manipName)){
+	  return getManipByName(manipName);
+	}
   RaveRobotObject::Manipulator::Ptr m(new Manipulator(this));
 	// initialize the ik module
   robot->SetActiveManipulator(manipName);

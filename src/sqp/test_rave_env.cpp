@@ -1,6 +1,7 @@
 #include "simulation/simplescene.h"
 #include "simulation/config_bullet.h"
 #include "robots/pr2.h"
+#include "robots/robot_manager.h"
 #include "simulation/bullet_io.h"
 #include <boost/foreach.hpp>
 #include "utils/vector_io.h"
@@ -80,19 +81,19 @@ int main(int argc, char *argv[]) {
   vector<double> startJoints;
   for (int i=0; i < probInfo["start_joints"].size(); ++i) startJoints.push_back(probInfo["start_joints"][i].asDouble());
 
-  RaveRobotObject::Ptr pr2 = getRobotByName(scene.env, scene.rave, probInfo["robot"].asString());
-  RaveRobotObject::Manipulator::Ptr arm = pr2->createManipulator(probInfo["manip"].asString(), false);
+  RaveRobotObject::Ptr robot = getRobotByName(scene.env, scene.rave, probInfo["robot"].asString());
+  RaveRobotObject::Manipulator::Ptr arm = robot->createManipulator(probInfo["manip"].asString(), false);
 
-  assert(pr2);
+  assert(robot);
   assert(arm);
 
-  removeBodiesFromBullet(pr2->children, scene.env->bullet->dynamicsWorld);
+  removeBodiesFromBullet(robot->children, scene.env->bullet->dynamicsWorld);
   BOOST_FOREACH(EnvironmentObjectPtr obj, scene.env->objects) {
     BulletObjectPtr bobj = boost::dynamic_pointer_cast<BulletObject>(obj);
     obj->setColor(randf(),randf(),randf(),1);
 //    if (bobj) makeFullyTransparent(bobj);
   }
-  pr2->setColor(0,1,1, .4);
+  robot->setColor(0,1,1, .4);
 
   vector<double> goal;
   for (int i=0; i < probInfo["goal"].size(); ++i) goal.push_back(probInfo["goal"][i].asDouble());
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
     MatrixXd initTraj = makeTraj(startJoints, endJoints, SQPConfig::nStepsInit);
     LengthConstraintAndCostPtr lcc(new LengthConstraintAndCost(true, true, defaultMaxStepMvmt(
         initTraj), SQPConfig::lengthCoef));
-    CollisionCostPtr cc(new CollisionCost(pr2->robot, scene.env->bullet->dynamicsWorld, brs,
+    CollisionCostPtr cc(new CollisionCost(robot->robot, scene.env->bullet->dynamicsWorld, brs,
         arm->manip->GetArmIndices(), SQPConfig::distPen, SQPConfig::collCoefInit));
     JointBoundsPtr jb(new JointBounds(true, true, defaultMaxStepMvmt(initTraj) / 5, arm->manip));
     prob.initialize(initTraj, true);
@@ -129,7 +130,7 @@ int main(int argc, char *argv[]) {
     util::drawAxes(goalTrans, .15 * METERS, scene.env);
     TIC1();
     planArmToCartTarget(prob, startJoints, goalTrans, arm);
-    cout << "total time: " << TOC();
+    cout << "total time: " << TOC()<< endl;
 
   }
   else if (probInfo["goal_type"] == "grasp") {
@@ -140,7 +141,7 @@ int main(int argc, char *argv[]) {
     util::drawAxes(goalTrans, .15 * METERS, scene.env);
     TIC1();
     planArmToGrasp(prob, startJoints, goalTrans, arm);
-    cout << "total time: " << TOC();
+    cout << "total time: " << TOC() << endl;
 
   }
 
@@ -151,9 +152,9 @@ int main(int argc, char *argv[]) {
   prob.m_plotters[0].reset();
 
   BulletConfig::linkPadding = 0;
-  scene.env->remove(pr2);
-  PR2Manager pr2m1(scene);
-  interactiveTrajPlot(prob.m_currentTraj, pr2m1.pr2->getManipByIndex(arm->index),  &scene);
+  //scene.env->remove(pr2);
+  RobotManager robotm1(scene);
+  interactiveTrajPlot(prob.m_currentTraj, robotm1.botLeft,  &scene);
   scene.idle(true);
 
 }

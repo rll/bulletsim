@@ -105,7 +105,7 @@ void ArmPrinter::printJoints() {
       << endl;
 }
 void ArmPrinter::printCarts() {
-  cout << "cart left: " << m_left->getTransform() << "right: " << m_right->getTransform() << endl;
+  cout << "cart left: " << m_left->getTransform() << " right: " << m_right->getTransform() << endl;
 }
 
 std::vector<OpenRAVE::KinBody::LinkPtr> getAffectedLinks(OpenRAVE::RobotBasePtr robot, const std::vector<int>& dofInds) {
