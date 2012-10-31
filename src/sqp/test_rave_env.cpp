@@ -22,6 +22,7 @@ using namespace Eigen;
 using namespace util;
 namespace fs = boost::filesystem;
 
+
 MatrixXd ravePlannerTest(OpenRAVE::EnvironmentBasePtr penv, OpenRAVE::RobotBasePtr probot,
     OpenRAVE::RobotBase::ManipulatorPtr pmanip, vector<double> target, const string plannerName="birrt"){
   PlannerBasePtr planner = RaveCreatePlanner(penv, plannerName);
@@ -48,6 +49,22 @@ MatrixXd ravePlannerTest(OpenRAVE::EnvironmentBasePtr penv, OpenRAVE::RobotBaseP
 
   return raveTrajectoryToEigen(ptraj);
 }
+
+
+void testRavePlanner(RaveRobotObject::Manipulator::Ptr & arm, btTransform goalTrans, Scene & scene, RaveRobotObject::Ptr robot)
+{
+    cout << "Trying OpenRAVE planner" << endl;
+    TIC();
+    vector<double> ikSoln;
+    bool ikSuccess = arm->solveIKUnscaled(util::toRaveTransform(goalTrans), ikSoln);
+    if (!ikSuccess) {
+      LOG_ERROR("no ik solution for target!");
+    }
+    MatrixXd raveTraj = ravePlannerTest(scene.rave->env, robot->robot, arm->origManip, ikSoln);
+    cout << "total time: " << TOC()<< endl;
+}
+
+
 
 Json::Value readJson(fs::path jsonfile) {
   // occasionally it fails, presumably when the json isn't done being written. so repeat 10 times
@@ -159,17 +176,7 @@ int main(int argc, char *argv[]) {
     TIC1();
     planArmToCartTarget(prob, startJoints, goalTrans, arm);
     cout << "total time: " << TOC()<< endl;
-
-    cout << "Trying OpenRAVE planner" << endl;
-    TIC1();
-    vector<double> ikSoln;
-    bool ikSuccess = arm->solveIKUnscaled(util::toRaveTransform(goalTrans), ikSoln);
-    if (!ikSuccess) {
-      LOG_ERROR("no ik solution for target!");
-    }
-    MatrixXd raveTraj = ravePlannerTest(scene.rave->env, robot->robot,
-        arm->origManip, ikSoln);
-    cout << "total time: " << TOC()<< endl;
+    testRavePlanner(arm, goalTrans, scene, robot);
   }
   else if (probInfo["goal_type"] == "grasp") {
 
@@ -180,7 +187,7 @@ int main(int argc, char *argv[]) {
     TIC1();
     planArmToGrasp(prob, startJoints, goalTrans, arm);
     cout << "total time: " << TOC() << endl;
-
+    testRavePlanner(arm, goalTrans, scene, robot);
   }
   if(!LocalConfig::jsonOutputPath.empty()){
     prob.writeTrajToJSON(LocalConfig::jsonOutputPath);

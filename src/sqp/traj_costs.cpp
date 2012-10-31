@@ -143,6 +143,7 @@ TrajCartCollInfo continuousTrajCollisions(const Eigen::MatrixXd& traj,
       if (ccc.hasHit() && ccc.m_hitPointWorld.getZ() > .05*METERS) {
         out[iStep-1].push_back(LinkCollision(.05, linkInds[iBody], ccc.m_hitPointWorld, ccc.m_hitNormalWorld));
         out[iStep-1][0].frac = ccc.m_closestHitFraction;
+        LOG_INFO_FMT("Link in continuous collision: %s", brs.m_links[iBody]->GetName().c_str());
       }
     }
 
