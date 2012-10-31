@@ -16,7 +16,7 @@ target_link_libraries(test_grb_eigen gurobi_c++ gurobi50)
 
 add_library(sqp traj_costs.cpp utils_sqp.cpp config_sqp.cpp sqp_algorithm.cpp collision_boxes.cpp 
 collision_map_tools.cpp planning_problems.cpp physics_aware2.cpp plotters.cpp state_setter.cpp kinematics_utils.cpp
-functions.cpp)
+functions.cpp utils_openrave.cpp)
 
 target_link_libraries(sqp utils simulation robots ${Boost_LIBRARIES} ${BULLET_LIBS} ${OpenRAVE_LIBRARIES} gurobi_c++ gurobi50)
 

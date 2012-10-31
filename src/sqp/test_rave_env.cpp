@@ -16,10 +16,38 @@
 #include "planning_problems.h"
 #include "kinematics_utils.h"
 #include "plotters.h"
+#include "utils_openrave.h"
 using namespace std;
 using namespace Eigen;
 using namespace util;
 namespace fs = boost::filesystem;
+
+MatrixXd ravePlannerTest(OpenRAVE::EnvironmentBasePtr penv, OpenRAVE::RobotBasePtr probot,
+    OpenRAVE::RobotBase::ManipulatorPtr pmanip, vector<double> target, const string plannerName="birrt"){
+  PlannerBasePtr planner = RaveCreatePlanner(penv, plannerName);
+  probot->SetActiveDOFs(pmanip->GetArmIndices());
+
+  PlannerBase::PlannerParametersPtr params(new PlannerBase::PlannerParameters());
+  params->_nMaxIterations = 4000; // max iterations before failure
+  params->SetRobotActiveJoints(probot); // set planning configuration space to current active dofs
+  params->vgoalconfig.resize(probot->GetActiveDOF());
+  params->vgoalconfig = target;
+
+  RAVELOG_INFO("starting to plan\n");
+  probot->GetActiveDOFValues(params->vinitialconfig);
+  if( !planner->InitPlan(probot,params) ) {
+      return MatrixXd();
+  }
+
+  // create a new output trajectory
+  TrajectoryBasePtr ptraj = RaveCreateTrajectory(penv,"");
+  if( !planner->PlanPath(ptraj) ) {
+      RAVELOG_WARN("plan failed, trying again\n");
+      return MatrixXd();
+  }
+
+  return raveTrajectoryToEigen(ptraj);
+}
 
 Json::Value readJson(fs::path jsonfile) {
   // occasionally it fails, presumably when the json isn't done being written. so repeat 10 times
@@ -132,6 +160,16 @@ int main(int argc, char *argv[]) {
     planArmToCartTarget(prob, startJoints, goalTrans, arm);
     cout << "total time: " << TOC()<< endl;
 
+    cout << "Trying OpenRAVE planner" << endl;
+    TIC1();
+    vector<double> ikSoln;
+    bool ikSuccess = arm->solveIKUnscaled(util::toRaveTransform(goalTrans), ikSoln);
+    if (!ikSuccess) {
+      LOG_ERROR("no ik solution for target!");
+    }
+    MatrixXd raveTraj = ravePlannerTest(scene.rave->env, robot->robot,
+        arm->origManip, ikSoln);
+    cout << "total time: " << TOC()<< endl;
   }
   else if (probInfo["goal_type"] == "grasp") {
 
@@ -144,10 +182,10 @@ int main(int argc, char *argv[]) {
     cout << "total time: " << TOC() << endl;
 
   }
-
   if(!LocalConfig::jsonOutputPath.empty()){
     prob.writeTrajToJSON(LocalConfig::jsonOutputPath);
   }
+
 
   prob.m_plotters[0].reset();
 

@@ -94,7 +94,7 @@ TrajCartCollInfo collectTrajCollisions(const Eigen::MatrixXd& traj, RobotBasePtr
 btConvexShape* getConvexCollisionShape(btCollisionShape* shape) {
   if (shape->getShapeType() == COMPOUND_SHAPE_PROXYTYPE) {
     btCompoundShape* compound = static_cast<btCompoundShape*>(shape);
-    assert(compound->getNumChildShapes()==1);
+    //assert(compound->getNumChildShapes()==1);
     btConvexShape* out = static_cast<btConvexShape*>(compound->getChildShape(0));
     assert(out != NULL);
     return out;
