@@ -207,8 +207,10 @@ bool planArmToCartTarget(PlanningProblem& prob, const Eigen::VectorXd& startJoin
   VectorXd endJoints = toVectorXd(ikSoln);
   MatrixXd initTraj;
   if(init.rows()==0){
+    LOG_INFO("No initial plan given");
     initTraj = makeTraj(startJoints, endJoints, SQPConfig::nStepsInit);
   }else{
+    LOG_INFO("Starting SQP from initial plan given");
     initTraj = init;
   }
 

@@ -5,5 +5,5 @@
   "goal_type" : "cart",
   "goal" : [ 0.869241, -0.148512, 0.235888, 0.408314, -1.11052, -0.755507, 0.876647],
   "env" : "data/wamtest2.env.xml",
-  "init_planner": "grasper"
+  "init_planner": "birrt"
 }
