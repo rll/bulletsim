@@ -23,8 +23,9 @@ using namespace util;
 namespace fs = boost::filesystem;
 
 
-MatrixXd ravePlannerTest(OpenRAVE::EnvironmentBasePtr penv, OpenRAVE::RobotBasePtr probot,
-    OpenRAVE::RobotBase::ManipulatorPtr pmanip, vector<double> target, const string plannerName="birrt"){
+MatrixXd ravePlannerTest(OpenRAVE::EnvironmentBasePtr penv,
+    OpenRAVE::RobotBasePtr probot, OpenRAVE::RobotBase::ManipulatorPtr pmanip,
+    vector<double> target, const string plannerName="birrt"){
   PlannerBasePtr planner = RaveCreatePlanner(penv, plannerName);
   probot->SetActiveDOFs(pmanip->GetArmIndices());
 
@@ -52,7 +53,8 @@ MatrixXd ravePlannerTest(OpenRAVE::EnvironmentBasePtr penv, OpenRAVE::RobotBaseP
 
 
 MatrixXd testRavePlanner(RaveRobotObject::Manipulator::Ptr & arm,
-    btTransform goalTrans, Scene & scene, RaveRobotObject::Ptr robot)
+    btTransform goalTrans, Scene & scene, RaveRobotObject::Ptr robot,
+    const string plannerName="birrt")
 {
     cout << "Trying OpenRAVE planner" << endl;
     TIC();
@@ -61,7 +63,8 @@ MatrixXd testRavePlanner(RaveRobotObject::Manipulator::Ptr & arm,
     if (!ikSuccess) {
       LOG_ERROR("no ik solution for target!");
     }
-    MatrixXd raveTraj = ravePlannerTest(scene.rave->env, robot->robot, arm->origManip, ikSoln);
+    MatrixXd raveTraj = ravePlannerTest(scene.rave->env, robot->robot,
+        arm->origManip, ikSoln, plannerName);
     cout << "total time: " << TOC()<< endl;
     return raveTraj;
 }
@@ -176,7 +179,8 @@ int main(int argc, char *argv[]) {
         btVector3(goal[4], goal[5], goal[6]));
     util::drawAxes(goalTrans, .15 * METERS, scene.env);
 
-    MatrixXd t = testRavePlanner(arm, goalTrans, scene, robot);
+    MatrixXd t = testRavePlanner(arm, goalTrans, scene, robot,
+        probInfo.get("init_planner", "birrt").asString());
     TIC1();
     planArmToCartTarget(prob, startJoints, goalTrans, arm, t);
     cout << "total time: " << TOC()<< endl;
