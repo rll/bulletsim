@@ -91,6 +91,29 @@ TrajCartCollInfo collectTrajCollisions(const Eigen::MatrixXd& traj, RobotBasePtr
   return out;
 }
 
+typedef pair<btTransform, btConvexShape*> pairChildShape;
+
+vector<pairChildShape> getCompoundChildShapes(btCompoundShape *compound){
+  //loop over child shapes
+  vector<pairChildShape> vec;
+  for(int iChild = 0; iChild < compound->getNumChildShapes(); iChild++){
+    btCompoundShapeChild child = compound->getChildList()[iChild];
+    if (child.m_childShapeType == COMPOUND_SHAPE_PROXYTYPE){
+      LOG_INFO("RECURSION shapey thing");
+      vector<pairChildShape> children =
+          getCompoundChildShapes(static_cast<btCompoundShape*>(child.m_childShape));
+      btTransform base = child.m_transform;
+      BOOST_FOREACH(pairChildShape myChild, children){
+        pairChildShape p(base* myChild.first, myChild.second);
+        vec.push_back(p);
+      }
+    }else{
+      vec.push_back(pairChildShape(child.m_transform,
+          static_cast<btConvexShape*>(child.m_childShape)));
+    }
+  }
+  return vec;
+}
 btConvexShape* getConvexCollisionShape(btCollisionShape* shape) {
   if (shape->getShapeType() == COMPOUND_SHAPE_PROXYTYPE) {
     btCompoundShape* compound = static_cast<btCompoundShape*>(shape);
@@ -132,21 +155,35 @@ TrajCartCollInfo continuousTrajCollisions(const Eigen::MatrixXd& traj,
       newTransforms.push_back(toBtTransform(link->GetTransform(),METERS));
     }
     for (int iBody=0; iBody < brs.m_bodies.size(); ++iBody) {
-
-      btConvexShape* cShape = getConvexCollisionShape(brs.m_bodies[iBody]->getCollisionShape());
-      if (cShape == NULL) printf("bad link: %s\n", brs.m_links[iBody]->GetName().c_str());
-      assert(cShape != NULL);
-      btCollisionWorld::ClosestConvexResultCallback ccc(btVector3(NAN, NAN, NAN), btVector3(NAN, NAN, NAN));
-      // XXX in general there is some arbitrary child shape transform
-      // but for our pr2 model loaded by openravesupport.cpp, there's only one child shape, and transform is the idenetiy
-      world->convexSweepTest(cShape, oldTransforms[iBody], newTransforms[iBody], ccc, (SQPConfig::padMult*BulletConfig::linkPadding - dSafeCont)*METERS);
-      if (ccc.hasHit() && ccc.m_hitPointWorld.getZ() > .05*METERS) {
-        out[iStep-1].push_back(LinkCollision(.05, linkInds[iBody], ccc.m_hitPointWorld, ccc.m_hitNormalWorld));
-        out[iStep-1][0].frac = ccc.m_closestHitFraction;
-        LOG_INFO_FMT("Link in continuous collision: %s", brs.m_links[iBody]->GetName().c_str());
+    btCollisionShape* collisionShape = brs.m_bodies[iBody]->getCollisionShape();
+    if(collisionShape->isCompound()){
+      vector<pairChildShape> children = getCompoundChildShapes(static_cast<btCompoundShape*>(collisionShape));
+      BOOST_FOREACH(pairChildShape child, children){
+        btConvexShape *cShape = child.second;
+        assert(cShape != NULL);
+        btCollisionWorld::ClosestConvexResultCallback ccc(btVector3(NAN, NAN, NAN), btVector3(NAN, NAN, NAN));
+        world->convexSweepTest(cShape, oldTransforms[iBody]*child.first,
+            newTransforms[iBody]*child.first, ccc,
+            (SQPConfig::padMult*BulletConfig::linkPadding - dSafeCont)*METERS);
+          if (ccc.hasHit() && ccc.m_hitPointWorld.getZ() > .05*METERS) {
+            out[iStep-1].push_back(LinkCollision(.05, linkInds[iBody], ccc.m_hitPointWorld, ccc.m_hitNormalWorld));
+            out[iStep-1][0].frac = ccc.m_closestHitFraction;
+            LOG_INFO_FMT("Link in continuous collision: %s", brs.m_links[iBody]->GetName().c_str());
+          }
+        }
+      }else{
+        btConvexShape *cShape = getConvexCollisionShape(collisionShape);
+        if (cShape == NULL) printf("bad link: %s\n", brs.m_links[iBody]->GetName().c_str());
+        assert(cShape != NULL);
+        btCollisionWorld::ClosestConvexResultCallback ccc(btVector3(NAN, NAN, NAN), btVector3(NAN, NAN, NAN));
+        world->convexSweepTest(cShape, oldTransforms[iBody], newTransforms[iBody], ccc, (SQPConfig::padMult*BulletConfig::linkPadding - dSafeCont)*METERS);
+        if (ccc.hasHit() && ccc.m_hitPointWorld.getZ() > .05*METERS) {
+          out[iStep-1].push_back(LinkCollision(.05, linkInds[iBody], ccc.m_hitPointWorld, ccc.m_hitNormalWorld));
+          out[iStep-1][0].frac = ccc.m_closestHitFraction;
+          LOG_INFO_FMT("Link in continuous collision: %s", brs.m_links[iBody]->GetName().c_str());
+        }
       }
     }
-
     oldTransforms = newTransforms;
   }
   return out;
