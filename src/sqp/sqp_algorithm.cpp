@@ -201,7 +201,7 @@ void VelScalgetCostsionCost::updateModel(const Eigen::MatrixXd& traj, GRBQuadExp
     m_vars.push_back(m_problem->m_model->addVar(0, GRB_INFINITY, 0, GRB_CONTINUOUS,"hinge"));
   }
   m_problem->m_model->update();
-
+  MatrixXd initTraj;
   int varCount = 0;
   for (int iStep = 0; iStep < traj.rows(); ++iStep) {
     if (m_problem->m_optMask(iStep)) {

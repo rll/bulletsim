@@ -194,7 +194,9 @@ bool outerOptimization(PlanningProblem& prob, CollisionCostPtr cc,
 /**
  * Generates a plan for moving the arm to a cartesian goal
  */
-bool planArmToCartTarget(PlanningProblem& prob, const Eigen::VectorXd& startJoints, const btTransform& goalTrans, RaveRobotObject::Manipulator::Ptr arm) {
+bool planArmToCartTarget(PlanningProblem& prob, const Eigen::VectorXd& startJoints,
+    const btTransform& goalTrans, RaveRobotObject::Manipulator::Ptr arm,
+    const Eigen::MatrixXd& init) {
   BulletRaveSyncherPtr brs = syncherFromArm(arm);
   vector<double> ikSoln;
   bool ikSuccess = arm->solveIKUnscaled(util::toRaveTransform(goalTrans), ikSoln);
@@ -203,8 +205,13 @@ bool planArmToCartTarget(PlanningProblem& prob, const Eigen::VectorXd& startJoin
     return false;
   }
   VectorXd endJoints = toVectorXd(ikSoln);
+  MatrixXd initTraj;
+  if(init.rows()==0){
+    initTraj = makeTraj(startJoints, endJoints, SQPConfig::nStepsInit);
+  }else{
+    initTraj = init;
+  }
 
-  MatrixXd initTraj = makeTraj(startJoints, endJoints, SQPConfig::nStepsInit);
   LengthConstraintAndCostPtr lcc(new LengthConstraintAndCost(true, false, defaultMaxStepMvmt(initTraj), SQPConfig::lengthCoef));
   CollisionCostPtr cc(new CollisionCost(arm->robot->robot,   arm->robot->getEnvironment()->bullet->dynamicsWorld, brs,
       arm->manip->GetArmIndices(), SQPConfig::distPen, SQPConfig::collCoefInit));

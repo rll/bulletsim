@@ -7,7 +7,8 @@
 bool planArmToJointTarget(PlanningProblem& prob, const Eigen::VectorXd& startJoints,
     const Eigen::VectorXd& endJoints, RaveRobotObject::Manipulator::Ptr arm);
 bool planArmToCartTarget(PlanningProblem& prob, const Eigen::VectorXd& startJoints,
-    const btTransform& endJoints, RaveRobotObject::Manipulator::Ptr arm);
+    const btTransform& endJoints, RaveRobotObject::Manipulator::Ptr arm,
+    const Eigen::MatrixXd& init);
 bool planArmToGrasp(PlanningProblem& prob, const Eigen::VectorXd& startJoints,
     const btTransform& goalTrans, RaveRobotObject::Manipulator::Ptr arm);
 bool planArmBaseToCartTarget(PlanningProblem& prob, const Eigen::VectorXd& startJoints, const btTransform& goalTrans,

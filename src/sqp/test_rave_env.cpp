@@ -47,11 +47,12 @@ MatrixXd ravePlannerTest(OpenRAVE::EnvironmentBasePtr penv, OpenRAVE::RobotBaseP
       return MatrixXd();
   }
 
-  return raveTrajectoryToEigen(ptraj);
+  return raveTrajectoryToEigen(ptraj).leftCols(probot->GetActiveDOF());
 }
 
 
-void testRavePlanner(RaveRobotObject::Manipulator::Ptr & arm, btTransform goalTrans, Scene & scene, RaveRobotObject::Ptr robot)
+MatrixXd testRavePlanner(RaveRobotObject::Manipulator::Ptr & arm,
+    btTransform goalTrans, Scene & scene, RaveRobotObject::Ptr robot)
 {
     cout << "Trying OpenRAVE planner" << endl;
     TIC();
@@ -62,6 +63,7 @@ void testRavePlanner(RaveRobotObject::Manipulator::Ptr & arm, btTransform goalTr
     }
     MatrixXd raveTraj = ravePlannerTest(scene.rave->env, robot->robot, arm->origManip, ikSoln);
     cout << "total time: " << TOC()<< endl;
+    return raveTraj;
 }
 
 
@@ -173,10 +175,12 @@ int main(int argc, char *argv[]) {
     btTransform goalTrans = btTransform(btQuaternion(goal[0], goal[1], goal[2], goal[3]),
         btVector3(goal[4], goal[5], goal[6]));
     util::drawAxes(goalTrans, .15 * METERS, scene.env);
+
+    MatrixXd t = testRavePlanner(arm, goalTrans, scene, robot);
     TIC1();
-    planArmToCartTarget(prob, startJoints, goalTrans, arm);
+    planArmToCartTarget(prob, startJoints, goalTrans, arm, t);
     cout << "total time: " << TOC()<< endl;
-    testRavePlanner(arm, goalTrans, scene, robot);
+
   }
   else if (probInfo["goal_type"] == "grasp") {
 
