@@ -196,6 +196,34 @@ void interactiveTrajPlot(const MatrixXd& traj, RaveRobotObject::Manipulator::Ptr
   }
 }
 
+void interactiveTrajPlot(const MatrixXd& traj, RaveRobotObject::Manipulator::Ptr arm1,
+			       RaveRobotObject::Manipulator::Ptr arm2, Scene* scene) {
+  RobotBasePtr robot = arm1->robot->robot;
+  ScopedRobotSave srs(robot);
+  BulletRaveSyncherPtr syncher = syncherFromArms(arm1, arm2);
+
+  vector<int> armInds;
+  vector<int> indt = arm1->manip->GetArmIndices();
+  armInds.insert(armInds.end(), indt.begin(), indt.end());
+  indt = arm2->manip->GetArmIndices();
+  armInds.insert(armInds.end(), indt.begin(), indt.end());
+
+  if (armInds.size() == traj.cols()) {
+    robot->SetActiveDOFs(armInds);
+  }
+  else {
+    robot->SetActiveDOFs(armInds, DOF_X | DOF_Y | DOF_RotationAxis, OpenRAVE::RaveVector<double>(0,0,1));
+  }
+
+  for (int iStep = 0; iStep < traj.rows(); ++iStep) {
+    robot->SetActiveDOFValues(toDoubleVec(traj.row(iStep)));
+    arm1->robot->updateBullet();
+    printf("step %i. press p to continue\n", iStep);
+    scene->step(0);
+    scene->idle(true);
+  }
+}
+
 PlotPointsPtr collisions;
 PlotLinesPtr escapes;
 

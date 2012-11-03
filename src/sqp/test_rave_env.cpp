@@ -226,7 +226,12 @@ int main(int argc, char *argv[]) {
   BulletConfig::linkPadding = 0;
   //scene.env->remove(pr2);
   RobotManager robotm1(scene);
-  interactiveTrajPlot(prob.m_currentTraj, robotm1.botLeft,  &scene);
+  if(probInfo["goal_type"] == "dualarm"){
+    interactiveTrajPlot(prob.m_currentTraj, robotm1.botLeft, robotm1.botRight,  &scene);
+  }else{
+    interactiveTrajPlot(prob.m_currentTraj, arm,  &scene);
+  }
+
   scene.idle(true);
 
 }

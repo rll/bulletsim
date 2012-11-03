@@ -115,6 +115,8 @@ public:
 };
 
 void interactiveTrajPlot(const Eigen::MatrixXd& traj, RaveRobotObject::Manipulator::Ptr arm, Scene* scene);
+void interactiveTrajPlot(const Eigen::MatrixXd& traj, RaveRobotObject::Manipulator::Ptr arm1,
+			 RaveRobotObject::Manipulator::Ptr arm2, Scene* scene);
 void clearCollisionPlots();
 void plotCollisions(const TrajCartCollInfo& trajCartInfo, double safeDist);
 
