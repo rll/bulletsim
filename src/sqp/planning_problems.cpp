@@ -371,13 +371,15 @@ bool planTwoArmsToCartTargets(PlanningProblem& prob, const Eigen::VectorXd& star
       SQPConfig::distPen, SQPConfig::collCoefInit));
   JointBoundsPtr jb(new JointBounds(leftArm->robot->robot, true, false,
       defaultMaxStepMvmt(initTraj) / 5, dofIndices));
-  //CartesianPoseCostPtr cp(new CartesianPoseCost(arm, goalTrans, initTraj.rows() - 1, 1000., 1000));
+  CartesianPoseCostPtr cpl(new CartesianPoseCost(leftArm, leftGoal, initTraj.rows() - 1, 1000., 1000, 0, 7));
+  CartesianPoseCostPtr cpr(new CartesianPoseCost(rightArm, rightGoal, initTraj.rows() - 1, 1000., 1000, 7, 7));
 
   prob.initialize(initTraj, false);
   prob.addComponent(lcc);
   prob.addComponent(cc);
   prob.addTrustRegionAdjuster(jb);
-  //prob.addComponent(cp);
+  prob.addComponent(cpl);
+  prob.addComponent(cpr);
   return outerOptimization(prob, cc, map<int, vector<paird> >());
 }
 

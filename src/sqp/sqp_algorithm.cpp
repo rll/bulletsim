@@ -501,12 +501,14 @@ void CartesianPoseCost::updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& ob
   if (m_l1) {
     removeConstraints();
     if (m_vars.size() == 0) {
-      for (int i=0; i < 7; ++i) m_vars.push_back(m_problem->m_model->addVar(0, GRB_INFINITY,0, GRB_CONTINUOUS, "pose_hinge"));
+      for (int i=0; i < m_numJoints; ++i){
+	m_vars.push_back(m_problem->m_model->addVar(0, GRB_INFINITY,0, GRB_CONTINUOUS, "pose_hinge"));
+      }
       m_problem->m_model->update();
     }
   }
 
-  VectorXd curVals = traj.row(m_timestep);
+  VectorXd curVals = traj.row(m_timestep).segment(m_firstCol, m_numJoints);
   // collect jacobian info --------
   btTransform tf;
   MatrixXd jac, rotjac;
@@ -515,14 +517,15 @@ void CartesianPoseCost::updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& ob
 
   m_obj = GRBQuadExpr(0);
   m_exactObjective = 0;
-  VarVector timestepVars = m_problem->m_trajVars.row(m_timestep);
+  VarVector fullVarRow = m_problem->m_trajVars.row(m_timestep);
+  VarVector timestepVars(&fullVarRow[m_firstCol], &fullVarRow[m_firstCol+m_numJoints]);
 
   if (m_posCoeff > 0) {
     Vector3d posCur = toVector3d(tf.getOrigin());
     //    cout << "position error: " << (m_posTarg - posCur).transpose() << endl;
     for (int i = 0; i < 3; ++i) {
       GRBLinExpr jacDotTheta;
-      jacDotTheta.addTerms(jac.row(i).data(), timestepVars.data(), traj.cols());
+      jacDotTheta.addTerms(jac.row(i).data(), timestepVars.data(), m_numJoints);
       GRBLinExpr erri = posCur(i) - m_posTarg(i) + jacDotTheta - jac.row(i).dot(curVals);
 
       if (m_l1) {
@@ -545,7 +548,7 @@ void CartesianPoseCost::updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& ob
     //    cout << "cur/targ: " << rotCur.transpose() << ", " << m_rotTarg.transpose() << endl;
     for (int i = 0; i < 4; ++i) {
       GRBLinExpr jacDotTheta;
-      jacDotTheta.addTerms(rotjac.row(i).data(), timestepVars.data(), traj.cols());
+      jacDotTheta.addTerms(rotjac.row(i).data(), timestepVars.data(), m_numJoints);
       GRBLinExpr erri = rotCur(i) - m_rotTarg(i) + jacDotTheta - rotjac.row(i).dot(curVals);
 
 
@@ -581,7 +584,7 @@ void CartesianPoseCost::subdivide(const std::vector<double>& insertTimes, const 
 double CartesianPoseCost::getCost() {
   // xxx this just calculates the current cost
   ScopedRobotSave srs(m_manip->robot->robot);
-  m_manip->setDOFValues(toDoubleVec(m_problem->m_currentTraj.row(m_timestep)));
+  m_manip->setDOFValues(toDoubleVec(m_problem->m_currentTraj.row(m_timestep).segment(m_firstCol, m_numJoints) ));
   btTransform tf = util::toBtTransform(m_manip->manip->GetTransform());
   if (m_l1) {
     return m_posCoeff * (toVector3d(tf.getOrigin()) - m_posTarg).lpNorm<1>() + m_rotCoeff

@@ -260,7 +260,9 @@ public:
   std::vector<GRBConstr> m_cnts;
   std::vector<GRBVar> m_vars;
   ////
-
+  
+  const int m_firstCol; // Specifies the first column in the trajectory that pertains to this end effector
+  const int m_numJoints; // The number of joints in the chain
   RaveRobotObject::Manipulator::Ptr m_manip;
   Eigen::Vector3d m_posTarg;
   Eigen::Vector4d m_rotTarg;
@@ -271,12 +273,21 @@ public:
   CartesianPoseCost(RaveRobotObject::Manipulator::Ptr manip, const btTransform& target, int timestep, double posCoeff,
                     double rotCoeff) :
     m_manip(manip), m_posTarg(toVector3d(target.getOrigin())), m_rotTarg(toVector4d(target.getRotation())),
-        m_posCoeff(posCoeff), m_rotCoeff(rotCoeff), m_timestep(timestep), m_dofInds(m_manip->manip->GetArmIndices()), m_l1(false) {
+      m_posCoeff(posCoeff), m_rotCoeff(rotCoeff), m_timestep(timestep), m_dofInds(m_manip->manip->GetArmIndices()), m_l1(false),
+      m_firstCol(0), m_numJoints(7){
   }
+    
+ CartesianPoseCost(RaveRobotObject::Manipulator::Ptr manip, const btTransform& target, int timestep, double posCoeff,
+		   double rotCoeff, int firstCol, int numJoints) :
+    m_manip(manip), m_posTarg(toVector3d(target.getOrigin())), m_rotTarg(toVector4d(target.getRotation())),
+      m_posCoeff(posCoeff), m_rotCoeff(rotCoeff), m_timestep(timestep), m_dofInds(m_manip->manip->GetArmIndices()), m_l1(false),
+      m_firstCol(firstCol), m_numJoints(numJoints){
+    }
   CartesianPoseCost(RaveRobotObject::Manipulator::Ptr manip, const std::vector<int>& dofInds, const btTransform& target, int timestep, double posCoeff,
                     double rotCoeff) :
     m_manip(manip), m_posTarg(toVector3d(target.getOrigin())), m_rotTarg(toVector4d(target.getRotation())),
-        m_posCoeff(posCoeff), m_rotCoeff(rotCoeff), m_timestep(timestep), m_dofInds(dofInds), m_l1(false) {
+        m_posCoeff(posCoeff), m_rotCoeff(rotCoeff), m_timestep(timestep), m_dofInds(dofInds), m_l1(false),
+      m_firstCol(0), m_numJoints(7) {
   }
 
   void updateModel(const Eigen::MatrixXd& traj, GRBQuadExpr& objective);
