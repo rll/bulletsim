@@ -13,3 +13,6 @@ bool planArmToGrasp(PlanningProblem& prob, const Eigen::VectorXd& startJoints,
     const btTransform& goalTrans, RaveRobotObject::Manipulator::Ptr arm);
 bool planArmBaseToCartTarget(PlanningProblem& prob, const Eigen::VectorXd& startJoints, const btTransform& goalTrans,
                              RaveRobotObject::Manipulator::Ptr arm);
+bool planTwoArmsToCartTargets(PlanningProblem& prob, const Eigen::VectorXd& startJoints,
+    const btTransform& leftGoal, const btTransform& rightGoal,
+    RaveRobotObject::Manipulator::Ptr leftArm, RaveRobotObject::Manipulator::Ptr rightArm);

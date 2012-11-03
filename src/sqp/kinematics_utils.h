@@ -33,6 +33,8 @@ std::vector<btVector3> getGripperPositions(const Eigen::MatrixXd& traj, RaveRobo
 std::vector<btTransform> getGripperPoses(const Eigen::MatrixXd& traj, RaveRobotObject::Manipulator::Ptr rrom);
 
 BulletRaveSyncherPtr syncherFromArm(RaveRobotObject::Manipulator::Ptr rrom);
+BulletRaveSyncherPtr syncherFromArms(RaveRobotObject::Manipulator::Ptr rrom1,
+    RaveRobotObject::Manipulator::Ptr rrom2);
 BulletRaveSyncherPtr fullBodySyncher(RaveRobotObject* rro);
 
 class ArmPrinter {

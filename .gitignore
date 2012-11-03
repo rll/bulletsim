@@ -18,5 +18,6 @@ data/phasespace_rigid_info/
 data/boundary/
 lib/phasespace/src/examples/example1
 lib/phasespace/src/examples/example2
+lib/bullet-2.79/*
 bulletsim_binaries/
 *.pyc

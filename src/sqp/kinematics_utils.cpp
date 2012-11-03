@@ -163,6 +163,28 @@ BulletRaveSyncherPtr syncherFromArm(RaveRobotObject::Manipulator::Ptr rrom) {
   return BulletRaveSyncherPtr(new BulletRaveSyncher(armLinks, armBodies));
 }
 
+BulletRaveSyncherPtr syncherFromArms(RaveRobotObject::Manipulator::Ptr rrom1,
+    RaveRobotObject::Manipulator::Ptr rrom2) {
+  vector<KinBody::LinkPtr> armLinks = getArmLinks(rrom1->manip);
+  vector<KinBody::LinkPtr> armLinks2 = getArmLinks(rrom2->manip);
+  // This might be inefficient but shouldn't matter
+  armLinks.insert(armLinks.end(), armLinks2.begin(), armLinks2.end());
+  vector<btRigidBody*> armBodies;
+  BOOST_FOREACH(KinBody::LinkPtr& link, armLinks) {
+    armBodies.push_back(rrom1->robot->associatedObj(link)->rigidBody.get());
+  }
+  vector<KinBodyPtr> grabbedBodies;
+  rrom1->robot->robot->GetGrabbed(grabbedBodies);
+  BOOST_FOREACH(KinBodyPtr body, grabbedBodies) {
+    RaveObject* robj = rrom1->robot->rave->rave2bulletsim[body];
+    BOOST_FOREACH(KinBody::LinkPtr link, body->GetLinks()) {
+      armLinks.push_back(link);
+      armBodies.push_back(robj->associatedObj(link)->rigidBody.get());
+    }
+  }
+  return BulletRaveSyncherPtr(new BulletRaveSyncher(armLinks, armBodies));
+}
+
 void removeBodiesFromBullet(vector<BulletObject::Ptr> objs, btDynamicsWorld* world) {
   BOOST_FOREACH(BulletObject::Ptr obj, objs) {
     world->removeRigidBody(obj->rigidBody.get());

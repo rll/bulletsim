@@ -146,7 +146,8 @@ int main(int argc, char *argv[]) {
   robot->setColor(0,1,1, .4);
 
   vector<double> goal;
-  for (int i=0; i < probInfo["goal"].size(); ++i) goal.push_back(probInfo["goal"][i].asDouble());
+  for (int i=0; i < probInfo["goal"].size(); ++i)
+    goal.push_back(probInfo["goal"][i].asDouble());
 
   arm->setGripperAngle(.5);
 
@@ -155,7 +156,6 @@ int main(int argc, char *argv[]) {
   TIC();
   PlanningProblem prob;
   prob.addPlotter(ArmPlotterPtr(new ArmPlotter(arm, &scene,  SQPConfig::plotDecimation)));
-
 
   if (probInfo["goal_type"] == "joint") {
     int nJoints = 7;
@@ -173,7 +173,6 @@ int main(int argc, char *argv[]) {
     prob.addComponent(jb);
   }
   else if (probInfo["goal_type"] == "cart") {
-
     VectorXd startJoints = toVectorXd(arm->getDOFValues());
     btTransform goalTrans = btTransform(btQuaternion(goal[0], goal[1], goal[2], goal[3]),
         btVector3(goal[4], goal[5], goal[6]));
@@ -184,7 +183,27 @@ int main(int argc, char *argv[]) {
     TIC1();
     planArmToCartTarget(prob, startJoints, goalTrans, arm, t);
     cout << "total time: " << TOC()<< endl;
+  }
+  else if (probInfo["goal_type"] == "dualarm") {
+    RaveRobotObject::Manipulator::Ptr rightArm = robot->createManipulator("rightarm", false);
 
+    vector<double> dofVals;
+    vector<double> df = arm->getDOFValues();
+    dofVals.insert(dofVals.end(), df.begin(), df.end());
+    df = rightArm->getDOFValues();
+    dofVals.insert(dofVals.end(), df.begin(), df.end());
+    VectorXd startJoints = toVectorXd(dofVals);
+
+    btTransform goalTransL = btTransform(btQuaternion(goal[0], goal[1], goal[2], goal[3]),
+        btVector3(goal[4], goal[5], goal[6]));
+    btTransform goalTransR = btTransform(btQuaternion(goal[7], goal[8], goal[9], goal[10]),
+            btVector3(goal[11], goal[12], goal[13]));
+    util::drawAxes(goalTransL, .15 * METERS, scene.env);
+    util::drawAxes(goalTransR, .15 * METERS, scene.env);
+
+    TIC1();
+    planTwoArmsToCartTargets(prob, startJoints, goalTransL, goalTransR, arm, rightArm);
+    cout << "total time: " << TOC()<< endl;
   }
   else if (probInfo["goal_type"] == "grasp") {
 

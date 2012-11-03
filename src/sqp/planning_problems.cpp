@@ -144,7 +144,8 @@ bool outerOptimization(PlanningProblem& prob, CollisionCostPtr cc,
 		const map<int, vector<paird> >& allowedCollisions) {
   for (int outerOptIter = 0;; ++outerOptIter) {
     LOG_INFO_FMT("outer optimization iteration: %i", outerOptIter);
-    if (prob.m_tra->m_shrinkage < SQPConfig::shrinkLimit) prob.m_tra->adjustTrustRegion(10*SQPConfig::shrinkLimit / prob.m_tra->m_shrinkage);
+    if (prob.m_tra->m_shrinkage < SQPConfig::shrinkLimit)
+      prob.m_tra->adjustTrustRegion(10*SQPConfig::shrinkLimit / prob.m_tra->m_shrinkage);
     prob.optimize(SQPConfig::maxIter);
 
     // discrete is safe, else double coll coeff (but if it's at the upper limit, quit)
@@ -336,6 +337,49 @@ bool planArmBaseToCartTarget(PlanningProblem& prob, const Eigen::VectorXd& start
   return outerOptimization(prob, cc, map<int, vector<paird> >());
 }
 
+bool planTwoArmsToCartTargets(PlanningProblem& prob, const Eigen::VectorXd& startJoints,
+    const btTransform& leftGoal, const btTransform& rightGoal,
+    RaveRobotObject::Manipulator::Ptr leftArm, RaveRobotObject::Manipulator::Ptr rightArm) {
+  BulletRaveSyncherPtr brs = syncherFromArms(leftArm, rightArm);
+  vector<double> ikSolnL;
+  bool ikSuccess = leftArm->solveIKUnscaled(util::toRaveTransform(leftGoal), ikSolnL);
+  if (!ikSuccess) {
+    LOG_ERROR("no ik solution for left target!");
+    return false;
+  }
+
+  vector<double> ikSolnR;
+  ikSuccess = rightArm->solveIKUnscaled(util::toRaveTransform(rightGoal), ikSolnR);
+  if (!ikSuccess) {
+    LOG_ERROR("no ik solution for right target!");
+    return false;
+  }
+
+  vector<double> ikSoln;
+  ikSoln.insert(ikSoln.end(), ikSolnL.begin(), ikSolnL.end());
+  ikSoln.insert(ikSoln.end(), ikSolnR.begin(), ikSolnR.end());
+
+  VectorXd endJoints = toVectorXd(ikSoln);
+  MatrixXd initTraj = makeTraj(startJoints, endJoints, SQPConfig::nStepsInit);
+
+  LengthConstraintAndCostPtr lcc(new LengthConstraintAndCost(true, false, defaultMaxStepMvmt(initTraj), SQPConfig::lengthCoef));
+  vector<int> dofIndices;
+  dofIndices.insert(dofIndices.end(), leftArm->manip->GetArmIndices().begin(), leftArm->manip->GetArmIndices().end());
+  dofIndices.insert(dofIndices.end(), rightArm->manip->GetArmIndices().begin(), rightArm->manip->GetArmIndices().end());
+  CollisionCostPtr cc(new CollisionCost(leftArm->robot->robot,
+      leftArm->robot->getEnvironment()->bullet->dynamicsWorld, brs, dofIndices,
+      SQPConfig::distPen, SQPConfig::collCoefInit));
+  JointBoundsPtr jb(new JointBounds(leftArm->robot->robot, true, false,
+      defaultMaxStepMvmt(initTraj) / 5, dofIndices));
+  //CartesianPoseCostPtr cp(new CartesianPoseCost(arm, goalTrans, initTraj.rows() - 1, 1000., 1000));
+
+  prob.initialize(initTraj, false);
+  prob.addComponent(lcc);
+  prob.addComponent(cc);
+  prob.addTrustRegionAdjuster(jb);
+  //prob.addComponent(cp);
+  return outerOptimization(prob, cc, map<int, vector<paird> >());
+}
 
 #if 0
 bool planArmToGrasp(PlanningProblem& prob, btTransform& target) {

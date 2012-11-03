@@ -81,15 +81,15 @@ public:
     virtual osg::Node *getOSGNode() const { return NULL; }
 
     virtual void setColor(float r, float g, float b, float a) {};
-		virtual void adjustTransparency(float increment) {};
-
-		//gets the index of the closest part of the object (face, capsule, rigid_body, etc)
-		//for rigid bodies, there is only one index so this will always return 0
-		virtual int getIndex(const btTransform& transform) { throw std::runtime_error("getIndex() hasn't been defined yet"); return 0;}
-		virtual int getIndexSize() { std::runtime_error("getIndex() hasn't been defined yet"); return 0;}
-		//gets the transform of the indexed part
-		//for rigid bodies, this just returns the rigid body's transform
-		virtual btTransform getIndexTransform(int index) { std::runtime_error("getIndexTransform() hasn't been defined yet"); return btTransform();}
+    virtual void adjustTransparency(float increment) {};
+    
+    //gets the index of the closest part of the object (face, capsule, rigid_body, etc)
+    //for rigid bodies, there is only one index so this will always return 0
+    virtual int getIndex(const btTransform& transform) { throw std::runtime_error("getIndex() hasn't been defined yet"); return 0;}
+    virtual int getIndexSize() { std::runtime_error("getIndex() hasn't been defined yet"); return 0;}
+    //gets the transform of the indexed part
+    //for rigid bodies, this just returns the rigid body's transform
+    virtual btTransform getIndexTransform(int index) { std::runtime_error("getIndexTransform() hasn't been defined yet"); return btTransform();}
 };
 
 class RaveInstance;
