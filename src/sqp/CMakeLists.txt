@@ -6,7 +6,7 @@ include_directories(
     ${EIGEN3_INCLUDE_DIR}
 )
 
-SET(CMAKE_CXX_FLAGS "-Wall -Wno-sign-compare -Wno-reorder")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-sign-compare -Wno-reorder")
 
 set(GUROBI_INCLUDE_DIR "${GUROBI_HOME}/include")
 set(GUROBI_LIBRARY_DIR "${GUROBI_HOME}/lib")
@@ -39,6 +39,12 @@ add_library(sqp2 expr_ops.cpp sqp.cpp config_sqp.cpp traj_sqp.cpp
 collisions.cpp kinematics_utils.cpp plotters.cpp utils_sqp.cpp functions.cpp
 traj_safety_checks.cpp planning_problems2.cpp state_setter.cpp physics_planning_scene.cpp)
 target_link_libraries(sqp2 utils gurobi_c++ gurobi50 simulation)
+
+add_library(sqp2s SHARED expr_ops.cpp sqp.cpp config_sqp.cpp traj_sqp.cpp 
+collisions.cpp kinematics_utils.cpp plotters.cpp utils_sqp.cpp functions.cpp
+traj_safety_checks.cpp planning_problems2.cpp state_setter.cpp physics_planning_scene.cpp)
+target_link_libraries(sqp2s sutils gurobi_c++ gurobi50 simulation)
+
 
 add_executable(test_new_arm_table test_new_arm_table.cpp)
 target_link_libraries(test_new_arm_table sqp2 robots simulation)

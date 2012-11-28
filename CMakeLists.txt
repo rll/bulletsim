@@ -8,6 +8,7 @@ IF (NOT CMAKE_BUILD_TYPE)
  SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
 ENDIF (NOT CMAKE_BUILD_TYPE)
 
+set(CMAKE_CXX_FLAGS "-fPIC")
 
 # external libraries
 find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
