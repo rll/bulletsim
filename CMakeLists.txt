@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 project(bulletsim)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMakeModules")
 set(BULLETSIM_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 
@@ -69,3 +69,8 @@ endif()
 
 add_subdirectory(lib)
 add_subdirectory(src)
+
+catkin_package(
+  LIBRARIES
+    sqp2
+)
