@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 2.6)
 project(bulletsim)
+message("BULLETSIM BULLETSIM BULLETSIM BULLETSIM BULLETSIM BULLETSIM BULLETSIM")
+find_package(catkin REQUIRED)
+# This might work
+catkin_package(
+  INCLUDE_DIRS
+    include
+  LIBRARIES
+    sqp2
+	moveit_sqpp_interface_ros
+)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMakeModules")
 set(BULLETSIM_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -69,10 +80,9 @@ if ("${GUROBI_HOME}" STREQUAL "")
   message (FATAL_ERROR "You must set GUROBI_HOME variable")
 endif()
 
+# This may or may not be a bad idea
+include_directories("include")
+
 add_subdirectory(lib)
 add_subdirectory(src)
 
-catkin_package(
-  LIBRARIES
-    sqp2
-)

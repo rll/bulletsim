@@ -38,6 +38,7 @@ endif(BUILD_TEST)
 if (JOHNS_ADVENTURES)
    add_subdirectory(john_sandbox)
    add_subdirectory(sqp)
+   add_subdirectory(moveit)
    #add_subdirectory(knots)
 endif(JOHNS_ADVENTURES)
 
