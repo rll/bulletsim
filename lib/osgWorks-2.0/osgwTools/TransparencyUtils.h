@@ -63,6 +63,16 @@ is disabled later, if the name matches, you delete the StateSet. */
 static std::string s_magicStateSetName( "TransparentDeleteMe" );
 
 
+/** \brief Returns True if the given StateSet is configured like one of our transparent StateSets.
+\It returns True if the Node has a StateSet, and the StateSet has the following signature:
+\li A BlendColor StateAttribute
+\li A BlendFunc StateAttribute
+\li GL_BLEND is enabled
+\li Rendering hint set to TRANSPARENT_BIN
+*/
+OSGWTOOLS_EXPORT bool isTransparent( const osg::StateSet* stateSet );
+
+
 
 /** \brief Sets a transparent StateSet on the given Node or Drawable, saving 
 its current StateSet as UserData. If nodeOrDrawable's UserData is NULL, this 
@@ -169,16 +179,6 @@ bool transparentDisable( T* nodeOrDrawable, bool recursive=false )
 
     return( true );
 }
-
-/** \brief Returns True if the given StateSet is configured like one of our transparent StateSets.
-\It returns True if the Node has a StateSet, and the StateSet has the following signature:
-\li A BlendColor StateAttribute
-\li A BlendFunc StateAttribute
-\li GL_BLEND is enabled
-\li Rendering hint set to TRANSPARENT_BIN
-*/
-OSGWTOOLS_EXPORT bool isTransparent( const osg::StateSet* stateSet );
-
 
 
 /** \brief Finds StateSets with nominal transparency and marks the transparent state as PROTECTED

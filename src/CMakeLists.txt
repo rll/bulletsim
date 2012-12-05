@@ -6,7 +6,7 @@ include_directories("/opt/ros/fuerte/include")
 
 include_directories(
     ${BULLETSIM_SOURCE_DIR}/src
-
+    ${OpenCV_INCLUDE_DIRS}
     ${BULLET_DIR}/src
     ${OSGBULLET_DIR}
     ${OSGWORKS_DIR}
