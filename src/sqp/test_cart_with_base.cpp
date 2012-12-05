@@ -14,14 +14,13 @@
 #include "sqp/kinematics_utils.h"
 #include "sqp/traj_sqp.h"
 #include "utils_sqp.h"
-#include "physics_planning_scene.h"
 using namespace std;
 using namespace Eigen;
 using namespace util;
 RaveRobotObject::Ptr pr2;
 
 
- #define PPSCENE
+// #define PPSCENE
 
 int main(int argc, char *argv[]) {
 
@@ -62,6 +61,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   PR2Manager pr2m(scene);
+  setupBulletForSQP(scene.env->bullet->dynamicsWorld);
   pr2 = pr2m.pr2;
   RaveRobotObject::Manipulator::Ptr arm = pr2m.pr2Right;
 //  removeBodiesFromBullet(pr2->children, scene.env->bullet->dynamicsWorld);
