@@ -31,7 +31,7 @@ message("CATKIN LIBS ${catkin_LIBRARY_DIRS}")
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
 
-add_executable(test_ros_rave test_ros_rave.cpp)
+add_executable(test_ros_rave test_ros_rave.cpp rosconversions.cpp)
 target_link_libraries(test_ros_rave simulation robots sqp2 json moveit_collision_detection moveit_collision_detection_fcl)
 
 set(MOVEIT_LIB_NAME moveit_sqpp_interface_ros)

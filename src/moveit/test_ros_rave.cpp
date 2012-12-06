@@ -23,7 +23,8 @@
 
 #include <moveit/collision_detection/collision_world.h>
 #include <moveit/collision_detection_fcl/collision_world.h>
-
+#include <geometric_shapes/shapes.h>
+#include <Eigen/Geometry>
 #include <iostream>
 
 using namespace collision_detection;
@@ -32,16 +33,25 @@ int main(int argc, const char* argv[]){
   cout << "foo" << endl;
   Scene scene;
   scene.startViewer();
-  scene.idle(true);
 
   util::setGlobalEnv(scene.env);
   util::setGlobalScene(&scene);
   scene.addVoidKeyCallback('=', boost::bind(&adjustWorldTransparency, .05), "increase opacity");
   scene.addVoidKeyCallback('-', boost::bind(&adjustWorldTransparency, -.05), "decrease opacity");
 
-  CollisionWorldConstPtr cw(new collision_detection::CollisionWorldFCL());
-  CollisionWorld::ObjectConstPtr cube(new CollisionWorld::Object("Cube"));
-  CollisionWorld::Change addCube;
+  CollisionWorldPtr cw(new collision_detection::CollisionWorldFCL());
+  shapes::ShapeConstPtr cube(new shapes::Box(1,2,.5));
+  Eigen::Vector3d axis(1,0,0);
+  Eigen::Vector3d trans(0,1,0);
+  Eigen::Affine3d t = Eigen::Translation3d(trans) * Eigen::AngleAxisd(0,axis);
+
+  Eigen::Affine3d pose;
+  cw->addToObject("cube1", cube, t);
+
+  importCollisionWorld(scene.env, scene.rave, cw);
+  cout << "Imported world" <<endl;
+  scene.idle(true);
+
   cout << "done" << endl;
 
 }

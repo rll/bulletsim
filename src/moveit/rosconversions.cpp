@@ -10,7 +10,7 @@
 using namespace std;
 OpenRAVE::KinBodyPtr moveitObjectToKinBody(collision_detection::CollisionWorld::ObjectConstPtr object, OpenRAVE::EnvironmentBasePtr env){
   vector<shapes::ShapeConstPtr> shapes = object->shapes_;
-  vector<Eigen::Affine3d> poses; // Affine3D is a 4x4 affine transform matrix
+  EigenSTL::vector_Affine3d poses = object->shape_poses_;
   list<OpenRAVE::KinBody::Link::GeometryInfo> geometries;
   for(int i = 0; i < shapes.size(); i++){
 	shapes::ShapeConstPtr shape = shapes[i];
