@@ -19,6 +19,7 @@ include_directories(${PCL_INCLUDE_DIRS})
 
 find_package(catkin COMPONENTS
   moveit_ros_planning
+  moveit_core
   roscpp
   rosconsole
   pluginlib
@@ -26,11 +27,12 @@ find_package(catkin COMPONENTS
   dynamic_reconfigure
   REQUIRED)
 
+message("CATKIN LIBS ${catkin_LIBRARY_DIRS}")
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
 
 add_executable(test_ros_rave test_ros_rave.cpp)
-target_link_libraries(test_ros_rave simulation robots sqp2 json)
+target_link_libraries(test_ros_rave simulation robots sqp2 json moveit_collision_detection moveit_collision_detection_fcl)
 
 set(MOVEIT_LIB_NAME moveit_sqpp_interface_ros)
 

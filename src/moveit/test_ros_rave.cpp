@@ -21,12 +21,12 @@
 #include "sqp/traj_sqp.h"
 #include "sqp/planning_problems2.h"
 
+#include <moveit/collision_detection/collision_world.h>
+#include <moveit/collision_detection_fcl/collision_world.h>
+
 #include <iostream>
 
-namespace sqpp_interface_ros
-{
-  
-}
+using namespace collision_detection;
 
 int main(int argc, const char* argv[]){
   cout << "foo" << endl;
@@ -39,6 +39,9 @@ int main(int argc, const char* argv[]){
   scene.addVoidKeyCallback('=', boost::bind(&adjustWorldTransparency, .05), "increase opacity");
   scene.addVoidKeyCallback('-', boost::bind(&adjustWorldTransparency, -.05), "decrease opacity");
 
-  cout << "done?" << endl;
+  CollisionWorldConstPtr cw(new collision_detection::CollisionWorldFCL());
+  CollisionWorld::ObjectConstPtr cube(new CollisionWorld::Object("Cube"));
+  CollisionWorld::Change addCube;
+  cout << "done" << endl;
 
 }
