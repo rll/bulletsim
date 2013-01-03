@@ -14,6 +14,14 @@ pcl::PointCloud<ColorPoint>::Ptr readPCD(const std::string& pcdfile) {
   return cloud;
 }
 
+CloudPtr readPCDNoColor(const std::string& pcdfile) {
+  CloudPtr cloud(new pcl::PointCloud<Point>);
+  if (pcl::io::loadPCDFile<Point> (pcdfile, *cloud) == -1) {
+    throw FileOpenError(pcdfile);
+    }
+  return cloud;
+}
+
 Eigen::MatrixXi xyz2uv(const Eigen::MatrixXf& xyz) {
  // http://www.pcl-users.org/Using-Kinect-with-PCL-How-to-project-a-3D-point-x-y-z-to-the-depth-rgb-image-and-how-to-unproject-a--td3164499.html
   VectorXf x = xyz.col(0);

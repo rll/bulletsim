@@ -16,7 +16,7 @@ struct LocalConfig : Config {
   LocalConfig() : Config() {
 //    params.push_back(new Parameter<bool>("printJoint", &printJoint, "print joints"));
 //    params.push_back(new Parameter<bool>("printCart", &printCart, "print cart"));
-    params.push_back(new Parameter<string>("loadCLoud", &loadCloud, "load cloud"));
+    params.push_back(new Parameter<string>("loadCloud", &loadCloud, "load cloud"));
     params.push_back(new Parameter<string>("loadEnv", &loadEnv, "load env"));
   }
 };
@@ -43,7 +43,8 @@ int main(int argc, char* argv[]) {
       Load(scene.env, scene.rave, LocalConfig::loadEnv);
     }
     else if (LocalConfig::loadCloud != "") {
-      ColorCloudPtr cloud = readPCD(LocalConfig::loadCloud);
+      CloudPtr c = readPCDNoColor(LocalConfig::loadCloud);
+	  ColorCloudPtr cloud = addColor(c, 200,200,200);
       cloud = downsampleCloud(cloud, .02);
       CollisionBoxes::Ptr collisionBoxes = collisionBoxesFromPointCloud(cloud, .02);
       scene.env->add(collisionBoxes);
