@@ -23,8 +23,6 @@ include_directories("${BULLETSIM_SOURCE_DIR}/bulletsim_msgs/build/gen/cpp")
 
 link_directories("/opt/ros/fuerte/stacks/geometry/tf/lib")
 
-add_executable(interact_with_point_cloud interact_with_point_cloud.cpp)
-target_link_libraries(interact_with_point_cloud clouds sqp)
 
 add_executable(test_ros_ser test_ros_ser.cpp)
 target_link_libraries(test_ros_ser ${ROS_LIBRARIES})
@@ -37,8 +35,13 @@ target_link_libraries(test_grb_eigen1 gurobi_c++ gurobi50 utils)
 
 add_library(sqp2 expr_ops.cpp sqp.cpp config_sqp.cpp traj_sqp.cpp 
 collisions.cpp kinematics_utils.cpp plotters.cpp utils_sqp.cpp functions.cpp
-traj_safety_checks.cpp planning_problems2.cpp state_setter.cpp physics_planning_scene.cpp)
-target_link_libraries(sqp2 utils gurobi_c++ gurobi50 simulation)
+traj_safety_checks.cpp planning_problems2.cpp state_setter.cpp physics_planning_scene.cpp
+collision_boxes.cpp collision_map_tools.cpp)
+target_link_libraries(sqp2 utils gurobi_c++ gurobi50 simulation robots)
+
+
+add_executable(interact_with_point_cloud interact_with_point_cloud.cpp)
+target_link_libraries(interact_with_point_cloud clouds sqp2)
 
 add_executable(test_new_arm_table test_new_arm_table.cpp)
 target_link_libraries(test_new_arm_table sqp2 robots simulation)
