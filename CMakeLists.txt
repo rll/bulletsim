@@ -86,3 +86,5 @@ include_directories("include")
 add_subdirectory(lib)
 add_subdirectory(src)
 
+install(FILES planner_plugin_description.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

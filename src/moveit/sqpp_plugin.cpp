@@ -70,6 +70,5 @@ private:
 
 } // sqpp_interface_ros
 
-PLUGINLIB_DECLARE_CLASS(sqpp_interface_ros, SQPPlanner,
-                        sqpp_interface_ros::SQPPlanner, 
+PLUGINLIB_EXPORT_CLASS( sqpp_interface_ros::SQPPlanner, 
                         planning_interface::Planner);
