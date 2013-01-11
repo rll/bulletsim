@@ -67,8 +67,6 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
 
   // May not need this; need to set OpenRAVE robot to initial joint state
 
-
-
   int numJoints = model_group->getJointModels().size();
   Eigen::MatrixXd tempm(2, numJoints);
   Eigen::VectorXd initialState(numJoints);
@@ -110,7 +108,9 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
 
   // We want something like:
   
-  setupArmToJointTarget(opt, goalState, RobotManipulatorPtr());
+
+  OpenRAVE::RobotBase::ManipulatorPtr manip = getManipulatorFromGroup(robot, model_group);
+  setupArmToJointTarget(opt, goalState, rro->createManipulator(manip->GetName(), false));
 
   trajOuterOpt(opt, AllowedCollisions());
 

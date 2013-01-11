@@ -6,8 +6,8 @@
 #include <boost/shared_ptr.hpp>
 #include <openrave/openrave.h>
 #include <assert.h>
-
 #include "utils/logging.h"
+#include <string>
 
 using namespace std;
 OpenRAVE::KinBodyPtr moveitObjectToKinBody(collision_detection::CollisionWorld::ObjectConstPtr object, OpenRAVE::EnvironmentBasePtr env){
@@ -125,4 +125,35 @@ bool setRaveRobotState(OpenRAVE::RobotBasePtr robot, sensor_msgs::JointState js)
   // }
   LOG_INFO("Set OpenRAVE joint states from ROS");
   return foundAllJoints;
+}
+
+OpenRAVE::RobotBase::ManipulatorPtr getManipulatorFromGroup(const OpenRAVE::RobotBasePtr robot, const kinematic_model::JointModelGroup* model_group){
+  std::vector<OpenRAVE::RobotBase::ManipulatorPtr> manipulators = robot->GetManipulators();
+  LOG_INFO_FMT("Found %d manipulators", manipulators.size());
+  LOG_INFO_FMT("Looking for %s", model_group->getName().c_str());
+  LOG_INFO_FMT("End effector %s", model_group->getEndEffectorName().c_str());
+  std::vector<std::string>::const_iterator nit = model_group->getJointModelNames().begin();
+  while(nit++ != model_group->getJointModelNames().end()){
+    LOG_INFO_FMT("  Joint: %s", nit->c_str());
+  }
+
+  std::string name = model_group->getName();
+  // This is an ugly hack because meh
+  size_t underscore_pos = string::npos;
+  while((underscore_pos = name.find('_')) != string::npos){
+    name.erase(underscore_pos, 1);
+  }
+  LOG_INFO_FMT("Cleaned name: %s", name.c_str());
+  // Don't the next few lines just make you love C++?
+  std::vector<OpenRAVE::RobotBase::ManipulatorPtr>::iterator iter = manipulators.begin();
+  while(iter != manipulators.end()){
+    LOG_INFO_FMT("OpenRAVE has %s", (*iter)->GetName().c_str());
+    if((*iter)->GetName() == name){
+      LOG_INFO("Found the corresponding OpenRAVE manipulator");
+      return (*iter);
+    }
+    LOG_INFO_FMT("End Effector name %s", (*iter)->GetEndEffector()->GetName().c_str());
+    iter++;
+  }
+  return manipulators[0];
 }
