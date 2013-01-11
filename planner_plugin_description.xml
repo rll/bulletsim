@@ -1,0 +1,11 @@
+<library path="libmoveit_sqpp_planner_plugin">
+  <class type="sqpp_interface_ros::SQPPlanner" base_class_type="planning_interface::Planner">
+    <description>
+      SQP based planning interface
+    </description>
+  </class>
+</library>
+The plugin description file is an XML file that serves to store all the important information about a plugin in a machine readable format. It contains information about the library the plugin is in, the name of the plugin, the type of the plugin, etc. If we consider the rectangle_plugin package discussed above, the plugin description file (e.g. rectangle_plugin.xml), would look something like this:
+
+
+
