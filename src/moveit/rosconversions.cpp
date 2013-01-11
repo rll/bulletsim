@@ -85,21 +85,44 @@ void importCollisionWorld(Environment::Ptr env, RaveInstance::Ptr rave, const co
 bool setRaveRobotState(OpenRAVE::RobotBasePtr robot, sensor_msgs::JointState js){
   vector<string>::iterator nameit = js.name.begin();
   vector<double>::iterator posit = js.position.begin();
+
   vector<int> dofs;
+  vector<double> positions;
   bool foundAllJoints = true;
   while(nameit != js.name.end()){
 	// Not sure if different types of joints need to be handled separately
 	OpenRAVE::KinBody::JointPtr joint = robot->GetJoint(*nameit);
+    LOG_INFO_FMT("Joint %s", nameit->c_str());
 	if(joint){
-	  dofs.push_back(joint->GetDOFIndex());
+      LOG_INFO_FMT("DOF Index %d", joint->GetDOFIndex());
+      if(joint->GetDOFIndex()>0){
+        dofs.push_back(joint->GetDOFIndex());
+        positions.push_back(*posit);
+      }
 	}else{
+      LOG_INFO_FMT("Could not find DOF Index for joint %s", nameit->c_str());
 	  foundAllJoints = false;
 	}
 
     nameit++;
+    posit++;
   }
-  LOG_INFO("Finished iterating through joints");
-  assert(js.position.size() == dofs.size());
-  robot->SetDOFValues(js.position, OpenRAVE::KinBody::CLA_CheckLimits, dofs);
+  LOG_INFO_FMT("Finished iterating through joints, setting %d DOFs corresponding to %d joints from ROS", dofs.size(), js.position.size());
+
+  try{
+    robot->SetDOFValues(positions, OpenRAVE::KinBody::CLA_CheckLimits, dofs);
+  }
+  catch(const openrave_exception& ex) {
+    RAVELOG_WARN("exception caught: %s\n",ex.what());
+  }// catch(const out_of_range& oor){
+  //   cerr << "Out of Range error: " << oor.what() << endl;
+  // }
+  // catch(const exception& ex){
+  //   LOG_ERROR_FMT("Unknown exception: %s\n", ex.what());
+  // }
+  // catch(...){
+  //   LOG_WARN("SOMETHING BLEW UP QQ");
+  // }
+  LOG_INFO("Set OpenRAVE joint states from ROS");
   return foundAllJoints;
 }

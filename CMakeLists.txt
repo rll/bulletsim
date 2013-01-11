@@ -25,7 +25,7 @@ set(CMAKE_CXX_FLAGS "-fPIC")
 find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 
 find_package(Eigen3 REQUIRED)
-find_package(OpenRAVE 0.8 REQUIRED)
+find_package(OpenRAVE 0.9 REQUIRED)
 find_package(OpenThreads REQUIRED)
 find_package(osg REQUIRED)
 find_package(osgDB REQUIRED)

@@ -43,9 +43,10 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
   //util::setGlobalScene(&scene);
   TrajOptimizer opt;
 
+  rave->env->SetDebugLevel(1);
   //OpenRAVE::RobotBasePtr robot = OpenRAVE::RaveCreateRobot(rave->env, kmodel->getName());
-
   OpenRAVE::RobotBasePtr robot = rave->env->ReadRobotXMLFile("robots/pr2-beta-sim.robot.xml");
+  rave->env->AddRobot(robot);
   LOG_INFO("Loaded robot XML");
   RaveRobotObject::Ptr rro(new RaveRobotObject(rave, robot, CONVEX_HULL, BulletConfig::kinematicPolicy <= 1));
   
@@ -72,13 +73,13 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
   Eigen::MatrixXd tempm(2, numJoints);
   Eigen::VectorXd initialState(numJoints);
   Eigen::VectorXd goalState(numJoints);
-  LOG_INFO_FMT("We have %d joints", numJoints);
+  LOG_INFO_FMT("Planning for %d joints", numJoints);
   //Eigen::MatrixXd trajectory(numJoints,100);
   jointStateToArray(planning_scene->getKinematicModel(),
                     req.motion_plan_request.start_state.joint_state, 
                     req.motion_plan_request.group_name,
                     initialState);
-  LOG_INFO("Got joint states as array");
+  LOG_INFO("Got initial joint states as array");
   // Note: May need to check req.mpr.start_state.multi_dof_joint_state for base transform and others
   // TODO: This function is broken
   setRaveRobotState(robot, req.motion_plan_request.start_state.joint_state);
