@@ -5,12 +5,14 @@
 #include <moveit/kinematic_state/conversions.h>
 #include <Eigen/Dense>
 #include <sqpp_interface_ros/rosconversions.h>
+#include "utils/logging.h"
 namespace sqpp_interface_ros
 {
 
 SQPPInterfaceROS::SQPPInterfaceROS(const kinematic_model::KinematicModelConstPtr& kmodel) :
   kmodel(kmodel), nh_("~") 
 {
+  LoggingInit();
   // Perhaps this should be done in Solve, IDKLOL
   bullet.reset(new BulletInstance());
   osg.reset(new OSGInstance()); // Maybe don't need
@@ -30,6 +32,7 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
 {
   ros::WallTime start_time = ros::WallTime::now();
 
+  initializeGRB();
   Eigen::MatrixXd initTraj;
 
   // Initialize a scene
@@ -39,12 +42,16 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
   util::setGlobalEnv(env);
   //util::setGlobalScene(&scene);
   TrajOptimizer opt;
-  OpenRAVE::RobotBasePtr robot = OpenRAVE::RaveCreateRobot(rave->env, kmodel->getName());
 
+  //OpenRAVE::RobotBasePtr robot = OpenRAVE::RaveCreateRobot(rave->env, kmodel->getName());
+
+  OpenRAVE::RobotBasePtr robot = rave->env->ReadRobotXMLFile("robots/pr2-beta-sim.robot.xml");
+  LOG_INFO("Loaded robot XML");
   RaveRobotObject::Ptr rro(new RaveRobotObject(rave, robot, CONVEX_HULL, BulletConfig::kinematicPolicy <= 1));
   
+  LOG_INFO("Created a robot??");
   sensor_msgs::JointState js;
-
+  
   // Gathers the goal joint constraints into a JointState object
   // TODO: Handle all constraints, not just first joint constraints
   // TODO: Refactor, this is ugly
@@ -53,35 +60,41 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
     js.position.push_back(req.motion_plan_request.goal_constraints[0].joint_constraints[i].position);
   }
 
-
+  LOG_INFO("Gathered goal joint state");
   const kinematic_model::JointModelGroup* model_group = 
     planning_scene->getKinematicModel()->getJointModelGroup(req.motion_plan_request.group_name);
 
   // May not need this; need to set OpenRAVE robot to initial joint state
-  Eigen::VectorXd initialState;
-  Eigen::VectorXd goalState;
+
+
 
   int numJoints = model_group->getJointModels().size();
   Eigen::MatrixXd tempm(2, numJoints);
+  Eigen::VectorXd initialState(numJoints);
+  Eigen::VectorXd goalState(numJoints);
+  LOG_INFO_FMT("We have %d joints", numJoints);
   //Eigen::MatrixXd trajectory(numJoints,100);
   jointStateToArray(planning_scene->getKinematicModel(),
                     req.motion_plan_request.start_state.joint_state, 
                     req.motion_plan_request.group_name,
                     initialState);
+  LOG_INFO("Got joint states as array");
   // Note: May need to check req.mpr.start_state.multi_dof_joint_state for base transform and others
+  // TODO: This function is broken
   setRaveRobotState(robot, req.motion_plan_request.start_state.joint_state);
-  
+  LOG_INFO("Set RAVE Robot State");
   // Get the goal state
   jointStateToArray(planning_scene->getKinematicModel(),
                     js, 
                     req.motion_plan_request.group_name, 
                     goalState);
+  LOG_INFO ("Got Goal state");
   // optimize!
   kinematic_state::KinematicState start_state(planning_scene->getCurrentState());
   kinematic_state::robotStateToKinematicState(*planning_scene->getTransforms(), req.motion_plan_request.start_state, start_state);
     
   ros::WallTime create_time = ros::WallTime::now();
-
+  LOG_INFO("Gathered start and goal states");
   // ROS_INFO("Optimization took %f sec to create", (ros::WallTime::now() - create_time).toSec());
   // ROS_INFO("Optimization took %f sec to create", (ros::WallTime::now() - create_time).toSec());
   // optimizer.optimize();
@@ -91,6 +104,7 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
   // Got a rave and a bullet instance
   // Copy planning scene obstacles into OpenRAVE world
   importCollisionWorld(env, rave, planning_scene->getCollisionWorld());
+  LOG_INFO("Imported collision world");
   // Create Robot Object
 
   // We want something like:

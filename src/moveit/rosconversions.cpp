@@ -7,6 +7,8 @@
 #include <openrave/openrave.h>
 #include <assert.h>
 
+#include "utils/logging.h"
+
 using namespace std;
 OpenRAVE::KinBodyPtr moveitObjectToKinBody(collision_detection::CollisionWorld::ObjectConstPtr object, OpenRAVE::EnvironmentBasePtr env){
   vector<shapes::ShapeConstPtr> shapes = object->shapes_;
@@ -93,7 +95,10 @@ bool setRaveRobotState(OpenRAVE::RobotBasePtr robot, sensor_msgs::JointState js)
 	}else{
 	  foundAllJoints = false;
 	}
+
+    nameit++;
   }
+  LOG_INFO("Finished iterating through joints");
   assert(js.position.size() == dofs.size());
   robot->SetDOFValues(js.position, OpenRAVE::KinBody::CLA_CheckLimits, dofs);
   return foundAllJoints;

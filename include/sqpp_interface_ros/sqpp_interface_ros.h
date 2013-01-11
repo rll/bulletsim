@@ -41,8 +41,7 @@ protected:
   OSGInstance::Ptr osg;
   Environment::Ptr env;
   kinematic_model::KinematicModelConstPtr kmodel;
-  TrajOptimizer opt;
-  // sqpp::SqppParameters params_;  
+    // sqpp::SqppParameters params_;  
 };
 
 }
