@@ -19,23 +19,26 @@ OpenRAVE::KinBodyPtr moveitObjectToKinBody(collision_detection::CollisionWorld::
     OpenRAVE::KinBody::Link::GeometryInfo info;
     // Convert the Eigen::Affine3D pose into a RaveTransform (translation + quaternion)
     Eigen::Vector3d translation = poses[i].translation();
+    LOG_WARN("Translation " << translation );
     Eigen::Matrix3d rot = poses[i].rotation();
+    LOG_WARN("Rotation " << rot );
     info._t.trans = RaveVector<double>(translation[0], translation[1], translation[2]);
     OpenRAVE::geometry::RaveTransformMatrix<double> rotm;
     rotm.rotfrommat(rot(0,0), rot(0,1), rot(0,2),
 		    rot(1,0), rot(1,1), rot(1,2),
 		    rot(2,0), rot(2,1), rot(2,2));
     info._t.rot = OpenRAVE::geometry::quatFromMatrix(rotm);
-
     // Fill in the geometry data (_vGeomData)
     switch(shape->type){
     case shapes::SPHERE: {//for sphere it is radius
+      LOG_DEBUG("Importing a sphere");
       info._type = OpenRAVE::KinBody::Link::GeomSphere;
 	  boost::shared_ptr<const shapes::Sphere> sph = boost::dynamic_pointer_cast<const shapes::Sphere>(shape);
       info._vGeomData.x = sph->radius;
       break;
 	}
     case shapes::CYLINDER: {//for cylinder, first 2 values are radius and height
+      LOG_DEBUG("Importing a cylinder");
       boost::shared_ptr<const shapes::Cylinder> cyl = boost::dynamic_pointer_cast<const shapes::Cylinder>(shape);
       info._type = OpenRAVE::KinBody::Link::GeomCylinder;
       info._vGeomData.x = cyl->radius;
@@ -43,14 +46,17 @@ OpenRAVE::KinBodyPtr moveitObjectToKinBody(collision_detection::CollisionWorld::
       break;
 	}
     case shapes::BOX: { //for boxes, first 3 values are extents
+      LOG_DEBUG("Importing a box");
       boost::shared_ptr<const shapes::Box> box = boost::dynamic_pointer_cast<const shapes::Box>(shape);
       info._type = OpenRAVE::KinBody::Link::GeomBox;
-      info._vGeomData.x = box->size[0];
-      info._vGeomData.y = box->size[1];
-      info._vGeomData.z = box->size[2];
+      // OpenRAVE uses half extents
+      info._vGeomData.x = box->size[0]/2.;
+      info._vGeomData.y = box->size[1]/2.;
+      info._vGeomData.z = box->size[2]/2.;
       break;
 	}
     case shapes::MESH: {
+      LOG_WARN("Importing a mesh");
       // Not actually sure if mesh and trimesh are the same thing.
       // Hopefully don't have to triangulate non-triangular meshes
       boost::shared_ptr<const shapes::Sphere> sph = boost::dynamic_pointer_cast<const shapes::Sphere>(shape);
@@ -73,7 +79,10 @@ OpenRAVE::KinBodyPtr moveitObjectToKinBody(collision_detection::CollisionWorld::
 
 void importCollisionWorld(Environment::Ptr env, RaveInstance::Ptr rave, const collision_detection::CollisionWorldConstPtr world){
   std::vector<string> objectIds = world->getObjectIds();
+  LOG_DEBUG("Importing ROS collision world");
+  LOG_DEBUG_FMT("World contains %d objects", world->getObjectsCount());
   for(int i = 0; i < objectIds.size(); i++){
+    LOG_DEBUG_FMT("Importing world object %d of %d", i, objectIds.size());
     collision_detection::CollisionWorld::ObjectConstPtr obj = world->getObject(objectIds[i]);
 	OpenRAVE::KinBodyPtr body = moveitObjectToKinBody(obj, rave->env);
 	// Not actually sure if the below is necessary, or what RaveCreateBody(env) actually does
