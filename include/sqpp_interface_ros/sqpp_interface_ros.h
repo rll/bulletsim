@@ -41,6 +41,7 @@ protected:
   OSGInstance::Ptr osg;
   Environment::Ptr env;
   kinematic_model::KinematicModelConstPtr kmodel;
+  boost::shared_ptr<Scene> sceneptr;
     // sqpp::SqppParameters params_;  
 };
 

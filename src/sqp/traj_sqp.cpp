@@ -61,6 +61,7 @@ void TrajOptimizer::preOptimize() {
 
 void TrajOptimizer::postOptimize() {
   LOG_DEBUG("traj increment:\n" << m_traj - m_traj_backup);
+  LOG_DEBUG("traj:\n" << m_traj);
 }
 
 TimestepFixed::TimestepFixed(TrajOptimizer* opt, int step) : TrajComponent(opt), m_step(step) {}

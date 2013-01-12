@@ -8,6 +8,10 @@
 #include "utils/logging.h"
 #include "sqp/config_sqp.h"
 
+#include "sqp/kinematics_utils.h"
+
+#include <iostream>
+
 namespace sqpp_interface_ros
 {
 
@@ -15,13 +19,20 @@ SQPPInterfaceROS::SQPPInterfaceROS(const kinematic_model::KinematicModelConstPtr
   kmodel(kmodel), nh_("~") 
 {
   LoggingInit();
-  // Perhaps this should be done in Solve, IDKLOL
-  bullet.reset(new BulletInstance());
-  osg.reset(new OSGInstance()); // Maybe don't need
-  env.reset(new Environment(bullet, osg));
-  env->bullet = bullet;
-  rave.reset(new RaveInstance());
+
+  sceneptr.reset(new Scene());
+
+  sceneptr->startViewer();
+  util::setGlobalEnv(sceneptr->env);
+  util::setGlobalScene(sceneptr.get());
+
+  // bullet = scene.env->bullet;
+  // osg.reset(new OSGInstance()); // Maybe don't need
+  env = sceneptr->env;
+  //env->bullet = bullet;
+  rave = sceneptr->rave;
   loadParams();
+
 }
 
 void SQPPInterfaceROS::loadParams(void) {
@@ -41,6 +52,8 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
     SQPConfig::distContSafe = 0;
     SQPConfig::distPen = .02;
     SQPConfig::shapeExpansion = .04;
+    SQPConfig::pauseEachIter = true;
+
 
   ros::WallTime start_time = ros::WallTime::now();
 
@@ -60,9 +73,7 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
   OpenRAVE::RobotBasePtr robot = rave->env->ReadRobotXMLFile("robots/pr2-beta-sim.robot.xml");
   rave->env->AddRobot(robot);
   LOG_INFO("Loaded robot XML");
-  RaveRobotObject::Ptr rro(new RaveRobotObject(rave, robot, CONVEX_HULL, BulletConfig::kinematicPolicy <= 1));
-  
-  LOG_INFO("Created a robot??");
+  // RaveRobotObject::Ptr rro(new RaveRobotObject(rave, robot, CONVEX_HULL, BulletConfig::kinematicPolicy <= 1));
   sensor_msgs::JointState js;
   
   // Gathers the goal joint constraints into a JointState object
@@ -90,6 +101,7 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
                     req.motion_plan_request.group_name,
                     initialState);
   LOG_INFO("Got initial joint states as array");
+  cout << initialState << endl;
   // Note: May need to check req.mpr.start_state.multi_dof_joint_state for base transform and others
   // TODO: This function is broken
   setRaveRobotState(robot, req.motion_plan_request.start_state.joint_state);
@@ -100,10 +112,10 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
                     req.motion_plan_request.group_name, 
                     goalState);
   LOG_INFO ("Got Goal state");
+  cout << goalState << endl;
   // optimize!
   kinematic_state::KinematicState start_state(planning_scene->getCurrentState());
   kinematic_state::robotStateToKinematicState(*planning_scene->getTransforms(), req.motion_plan_request.start_state, start_state);
-    
   ros::WallTime create_time = ros::WallTime::now();
   LOG_INFO("Gathered start and goal states");
   // ROS_INFO("Optimization took %f sec to create", (ros::WallTime::now() - create_time).toSec());
@@ -117,6 +129,16 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
   importCollisionWorld(env, rave, planning_scene->getCollisionWorld());
   LOG_INFO("Imported collision world");
 
+  LoadFromRave(env, rave);
+  
+  RaveRobotObject::Ptr rro =  getRobotByName(env, rave, "pr2");
+  removeBodiesFromBullet(rro->children, env->bullet->dynamicsWorld);
+  BOOST_FOREACH(EnvironmentObjectPtr obj, env->objects) {
+    BulletObjectPtr bobj = boost::dynamic_pointer_cast<BulletObject>(obj);
+    obj->setColor(randf(),randf(),randf(),1);
+  }
+    
+
   setupBulletForSQP(env->bullet->dynamicsWorld);
 
   // Create Robot Object
@@ -126,14 +148,15 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
 
   OpenRAVE::RobotBase::ManipulatorPtr manip = getManipulatorFromGroup(robot, model_group);
   setupArmToJointTarget(opt, goalState, rro->createManipulator(manip->GetName(), false));
-
+  setEndFixed(opt);
   trajOuterOpt(opt, AllowedCollisions());
 
   create_time = ros::WallTime::now();
   // assume that the trajectory is now optimized, fill in the output structure:
 
-  ROS_INFO("Output trajectory has %d joints", numJoints);
   Eigen::MatrixXd finalTraj = opt.m_traj;
+  LOG_WARN("Final Trajectory");
+  cout << opt.m_traj << endl;
   // fill in joint names:
   res.trajectory.joint_trajectory.joint_names.resize(numJoints);
   for (size_t i = 0; i < model_group->getJointModels().size(); i++)

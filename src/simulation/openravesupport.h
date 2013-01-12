@@ -14,8 +14,6 @@ using namespace std;
 using namespace OpenRAVE;
 
 
-
-
 struct RaveInstance : public boost::enable_shared_from_this<RaveInstance> {
   typedef boost::shared_ptr<RaveInstance> Ptr;
 
@@ -122,7 +120,7 @@ public:
 class RaveRobotObject : public RaveObject {
 public:
   typedef boost::shared_ptr<RaveRobotObject> Ptr;
-	typedef RobotManipulator Manipulator;
+  typedef RobotManipulator Manipulator;
 	
   RobotBasePtr robot;
 

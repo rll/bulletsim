@@ -92,9 +92,7 @@ bool setRaveRobotState(OpenRAVE::RobotBasePtr robot, sensor_msgs::JointState js)
   while(nameit != js.name.end()){
 	// Not sure if different types of joints need to be handled separately
 	OpenRAVE::KinBody::JointPtr joint = robot->GetJoint(*nameit);
-    LOG_INFO_FMT("Joint %s", nameit->c_str());
 	if(joint){
-      LOG_INFO_FMT("DOF Index %d", joint->GetDOFIndex());
       if(joint->GetDOFIndex()>0){
         dofs.push_back(joint->GetDOFIndex());
         positions.push_back(*posit);
@@ -131,7 +129,6 @@ OpenRAVE::RobotBase::ManipulatorPtr getManipulatorFromGroup(const OpenRAVE::Robo
   std::vector<OpenRAVE::RobotBase::ManipulatorPtr> manipulators = robot->GetManipulators();
   LOG_INFO_FMT("Found %d manipulators", manipulators.size());
   LOG_INFO_FMT("Looking for %s", model_group->getName().c_str());
-  LOG_INFO_FMT("End effector %s", model_group->getEndEffectorName().c_str());
   std::vector<std::string>::const_iterator nit = model_group->getJointModelNames().begin();
   while(nit++ != model_group->getJointModelNames().end()){
     LOG_INFO_FMT("  Joint: %s", nit->c_str());
@@ -152,7 +149,6 @@ OpenRAVE::RobotBase::ManipulatorPtr getManipulatorFromGroup(const OpenRAVE::Robo
       LOG_INFO("Found the corresponding OpenRAVE manipulator");
       return (*iter);
     }
-    LOG_INFO_FMT("End Effector name %s", (*iter)->GetEndEffector()->GetName().c_str());
     iter++;
   }
   return manipulators[0];
