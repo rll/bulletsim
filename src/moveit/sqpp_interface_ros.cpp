@@ -6,6 +6,8 @@
 #include <Eigen/Dense>
 #include <sqpp_interface_ros/rosconversions.h>
 #include "utils/logging.h"
+#include "sqp/config_sqp.h"
+
 namespace sqpp_interface_ros
 {
 
@@ -30,6 +32,16 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
                          const moveit_msgs::GetMotionPlan::Request &req, 
                          moveit_msgs::GetMotionPlan::Response &res) const
 {
+
+    BulletConfig::linkPadding = 0;
+    BulletConfig::margin = 0;
+    GeneralConfig::verbose=20000;
+    GeneralConfig::scale = 10.;
+    SQPConfig::distDiscSafe = .01;
+    SQPConfig::distContSafe = 0;
+    SQPConfig::distPen = .02;
+    SQPConfig::shapeExpansion = .04;
+
   ros::WallTime start_time = ros::WallTime::now();
 
   initializeGRB();
@@ -104,6 +116,9 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
   // Copy planning scene obstacles into OpenRAVE world
   importCollisionWorld(env, rave, planning_scene->getCollisionWorld());
   LOG_INFO("Imported collision world");
+
+  setupBulletForSQP(env->bullet->dynamicsWorld);
+
   // Create Robot Object
 
   // We want something like:

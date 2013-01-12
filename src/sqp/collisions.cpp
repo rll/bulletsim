@@ -124,6 +124,11 @@ TrajCartCollInfo collectTrajCollisions(const Eigen::MatrixXd& traj, RaveRobotObj
                                        const std::vector<int>& dofInds, bool useAffine) {
   RobotBasePtr& robot = rro->robot;
   ScopedRobotSave srs(robot);
+  // LOG_WARN_FMT("RRO %x\tEnv %x", rro, rro->getEnvironment());
+  // LOG_WARN_FMT("Bullet %x", rro->getEnvironment()->bullet.get());
+  // LOG_WARN_FMT("World %x", rro->getEnvironment()->bullet->dynamicsWorld);
+  assert(rro->getEnvironment());
+  assert(rro->getEnvironment()->bullet);
   btCollisionWorld* world = rro->getEnvironment()->bullet->dynamicsWorld;
 
   vector<KinBody::LinkPtr> links;
