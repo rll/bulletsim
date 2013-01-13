@@ -69,6 +69,7 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
   TrajOptimizer opt;
 
   rave->env->SetDebugLevel(1);
+  rave->env->Reset();
   //OpenRAVE::RobotBasePtr robot = OpenRAVE::RaveCreateRobot(rave->env, kmodel->getName());
   OpenRAVE::RobotBasePtr robot = rave->env->ReadRobotXMLFile("robots/pr2-beta-sim.robot.xml");
   rave->env->AddRobot(robot);
@@ -102,6 +103,7 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
                     initialState);
   LOG_INFO("Got initial joint states as array");
   cout << initialState << endl;
+
   // Note: May need to check req.mpr.start_state.multi_dof_joint_state for base transform and others
   // TODO: This function is broken
   setRaveRobotState(robot, req.motion_plan_request.start_state.joint_state);
@@ -113,6 +115,25 @@ bool SQPPInterfaceROS::solve(const planning_scene::PlanningSceneConstPtr& planni
                     goalState);
   LOG_INFO ("Got Goal state");
   cout << goalState << endl;
+
+  // Handle multi DOF joints (base)
+  moveit_msgs::MultiDOFJointState multiDofJoints = req.motion_plan_request.start_state.multi_dof_joint_state;
+  vector<geometry_msgs::Pose> poses = multiDofJoints.poses;
+  vector<string>::iterator mdJoints = multiDofJoints.joint_names.begin();
+  vector<geometry_msgs::Pose>::iterator posit = poses.begin();
+  vector<string>::iterator frameIds = multiDofJoints.frame_ids.begin();
+  while(mdJoints != multiDofJoints.joint_names.end()){
+    LOG_DEBUG("Multi DOF Joint: " << *mdJoints << " in frame " << *frameIds);
+    if(*mdJoints == "world_joint"){ // world_joint represents the offset from odom_combined to base_footprint
+      OpenRAVE::RaveVector<double> trans(posit->position.x, posit->position.y, posit->position.z);
+      OpenRAVE::RaveVector<double> rot(posit->orientation.w, posit->orientation.x, posit->orientation.y, posit->orientation.z);
+      OpenRAVE::Transform t(rot, trans);
+      robot->SetTransform(t);
+    }
+    posit++;
+    mdJoints++;
+    frameIds++;
+  }
   // optimize!
   kinematic_state::KinematicState start_state(planning_scene->getCurrentState());
   kinematic_state::robotStateToKinematicState(*planning_scene->getTransforms(), req.motion_plan_request.start_state, start_state);
